@@ -3,8 +3,8 @@
 ## Equipo
 
 - Joaquín Fernández — Product Owner
-- Pablo Tapia — Desarrollo
-- Felipe Karmy — Scrum Master
+- Pablo Tapia — Scrum Master
+- Felipe Karmy — Developer
 - Vicente Zapata — Desarrollo / Documentación
 
 ## Forma de trabajo
