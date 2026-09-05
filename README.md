@@ -21,6 +21,3 @@ Universidad Adolfo Ibáñez
 El prototipo aborda consultas relacionadas con licencias
 de conducir y permisos de circulación.
 
-## Project Board
-
-[URL del GitHub Project]
