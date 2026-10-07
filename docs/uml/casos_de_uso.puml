@@ -1,0 +1,24 @@
+@startuml
+title Figura 4.1 · Casos de uso del alcance Sprint 1
+left to right direction
+skinparam usecase {
+  BackgroundColor #EEF3FA
+  BorderColor #1F3A5F
+}
+skinparam actorBorderColor #1F3A5F
+
+actor "Vecino\n(actor primario)" as Vecino
+
+usecase "**UC-01 Consultar trámite**\nMust · US-01" as UC01
+usecase "**UC-02 Recibir enlace oficial**\nMust · US-06" as UC02
+usecase "**UC-03 Recibir aviso de abstención**\nMust · US-09" as UC03
+
+Vecino -- UC01
+Vecino -- UC02
+Vecino -- UC03
+UC01 ..> UC02 : <<include>>
+
+legend bottom left
+  Alcance S1 = estos tres. WhatsApp, LLM y panel de actualización quedan fuera (Won't · S2+).
+endlegend
+@enduml

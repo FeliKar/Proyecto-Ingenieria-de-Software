@@ -1,0 +1,68 @@
+@startuml
+title Figura 4.2 · Clases de diseño del alcance (SRP: una responsabilidad por caja)
+hide circle
+hide empty members
+skinparam shadowing false
+skinparam linetype ortho
+skinparam nodesep 70
+skinparam ranksep 70
+skinparam minClassWidth 240
+skinparam defaultFontName Arial
+skinparam classAttributeIconSize 0
+skinparam class {
+  BackgroundColor #EEF3FA
+  BorderColor #1F3A5F
+  ArrowColor #1F3A5F
+  HeaderBackgroundColor #1F3A5F
+  AttributeFontColor #1F3A5F
+  AttributeFontSize 11
+}
+skinparam legend {
+  BackgroundColor #FFFFFF
+  BorderColor #FFFFFF
+  FontColor #555555
+  FontSize 11
+}
+
+' Fila 1
+class "<color:#FFFFFF><b>TramitesRoutes</b></color>" as TramitesRoutes {
+  {field} + POST /api/tramites/consultar
+  {field} atiende HTTP, no hace matching
+}
+class "<color:#FFFFFF><b>TramiteService</b></color>" as TramiteService {
+  {field} + consultar(pregunta)
+  {field} orquesta: ficha o abstención
+}
+class "<color:#FFFFFF><b>TramiteMatcher</b></color>" as TramiteMatcher {
+  {field} + matchTramite(pregunta, fichas)
+  {field} null si no hay match o empate
+}
+
+' Fila 2
+class "<color:#FFFFFF><b>Abstencion</b></color>" as Abstencion {
+  {field} mensaje + canal de derivación
+  {field} texto fijo, no usa la pregunta
+}
+class "<color:#FFFFFF><b>FichasLoader</b></color>" as FichasLoader {
+  {field} + cargarFichas()
+  {field} rechaza ficha sin enlace https://
+}
+class "<color:#FFFFFF><b>FichaTramite</b></color>" as FichaTramite {
+  {field} id, titulo, alias, requisitos,
+  {field} pasos, vigencia, enlace_oficial
+}
+
+TramitesRoutes -right- TramiteService
+TramiteService -right- TramiteMatcher
+TramiteService -down- FichasLoader
+TramiteMatcher -down- FichaTramite
+FichasLoader -right- FichaTramite
+TramiteService -- Abstencion
+TramitesRoutes -[hidden]down- Abstencion
+Abstencion -[hidden]right- FichasLoader
+
+legend bottom left
+  Coherencia: TramitesRoutes → routes/tramites.routes.ts · TramiteMatcher → services/tramiteMatcher.ts · FichaTramite → types/ficha.ts · Abstencion → constants/abstention.ts
+  Pendiente: archivo de TramiteService y FichasLoader. Deuda S1: matching por palabras clave, sin LLM (US-10 en S2+).
+endlegend
+@enduml

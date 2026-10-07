@@ -1,0 +1,25 @@
+@startuml
+title Figura 4.4 · Componentes y despliegue hoy (1 nodo · monolito modular)
+left to right direction
+skinparam rectangle {
+  BorderColor #1F3A5F
+  RoundCorner 10
+}
+
+rectangle "**Navegador (celular)**\n\nconsume HTTP\nReact + TypeScript" as NAV #F5F6F2
+
+rectangle "**frontend :[puerto pendiente]**\n\nprovee UI\nConsultaForm · TramiteResult ·\nAbstentionMessage\nconsume API (tramitesApi)" as FE #EEF3FA
+
+rectangle "**backend :[puerto pendiente]**\n\nprovee REST POST /api/tramites/consultar\nTramitesRoutes → TramiteService →\nTramiteMatcher · abstention.ts" as BE #EEF3FA
+
+database "**fichas.json**\n\nfuente de verdad\n3 fichas sintéticas · sin BD" as J #FFF2CC
+
+NAV -- FE : HTTP
+FE -- BE : HTTP
+BE -- J : lee
+
+legend bottom left
+  Nodo único = máquina del equipo (dev/testing). React no accede directamente a fichas.json.
+  **2 procesos + UN JSON ≠ microservicios. ADR-01 lo deja firmado.**
+endlegend
+@enduml
