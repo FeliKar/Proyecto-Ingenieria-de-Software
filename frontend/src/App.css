@@ -1,0 +1,59 @@
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  background: #f5f7fa;
+  color: #1f2933;
+}
+
+.app {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.subtitulo {
+  color: #52606d;
+  margin-top: -0.5rem;
+}
+
+.consulta-form {
+  display: flex;
+  gap: 0.5rem;
+  margin: 1.5rem 0;
+  flex-wrap: wrap;
+}
+
+.consulta-form input {
+  flex: 1 1 300px;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid #cbd2d9;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+.consulta-form button {
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 6px;
+  background: #0b5fff;
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.consulta-form button:disabled {
+  background: #9fb3c8;
+  cursor: not-allowed;
+}
+
+.tramite-result,
+.abstention-message {
+  background: white;
+  border: 1px solid #e4e7eb;
+  border-radius: 8px;
+  padding: 1.25rem;
+}
+
+.error {
+  color: #b91c1c;
+}

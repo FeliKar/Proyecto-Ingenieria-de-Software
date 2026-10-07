@@ -1,0 +1,84 @@
+[
+  {
+    "id": "licencia-b-primera",
+    "tramite": "Primera licencia clase B",
+    "requisitos": [
+      "Ser mayor de 18 años.",
+      "Cédula de identidad vigente.",
+      "Certificado de estudios (mínimo 8° básico aprobado).",
+      "Examen teórico y práctico aprobado.",
+      "Certificado médico psicotécnico vigente."
+    ],
+    "pasos": [
+      "Inscribirse en la Dirección de Tránsito Municipal.",
+      "Rendir el examen teórico.",
+      "Rendir el examen práctico de conducción.",
+      "Pagar los derechos correspondientes.",
+      "Retirar la licencia en la fecha indicada."
+    ],
+    "vigencia": "6 años desde su emisión.",
+    "alias": [
+      "licencia b",
+      "sacar licencia clase b",
+      "primera licencia",
+      "licencia de conducir b",
+      "obtener licencia b",
+      "licencia conducir clase b",
+      "nueva licencia clase b"
+    ],
+    "enlace_oficial": "https://www.penalolen.cl/tramites/licencia-clase-b"
+  },
+  {
+    "id": "licencia-b-renovacion",
+    "tramite": "Renovación de licencia clase B",
+    "requisitos": [
+      "Licencia clase B anterior vigente o vencida.",
+      "Cédula de identidad vigente.",
+      "Certificado médico psicotécnico vigente.",
+      "No tener multas graves impagas."
+    ],
+    "pasos": [
+      "Solicitar hora en la Dirección de Tránsito Municipal.",
+      "Presentar documentación requerida.",
+      "Realizar examen psicotécnico.",
+      "Pagar los derechos de renovación.",
+      "Retirar la licencia renovada."
+    ],
+    "vigencia": "6 años desde su emisión.",
+    "alias": [
+      "renovar licencia",
+      "renovacion licencia clase b",
+      "renovar licencia clase b",
+      "renovacion licencia conducir",
+      "licencia vencida",
+      "segunda licencia clase b"
+    ],
+    "enlace_oficial": "https://www.penalolen.cl/tramites/renovacion-licencia-clase-b"
+  },
+  {
+    "id": "permiso-circulacion",
+    "tramite": "Permiso de circulación",
+    "requisitos": [
+      "Certificado de revisión técnica vigente.",
+      "Seguro obligatorio (SOAP) vigente.",
+      "Certificado de homologación (si aplica).",
+      "Factura o padrón del vehículo."
+    ],
+    "pasos": [
+      "Reunir los documentos requeridos.",
+      "Dirigirse a la Oficina de Partes Municipal o portal en línea.",
+      "Pagar el valor del permiso de circulación.",
+      "Pegar el distintivo en el parabrisas."
+    ],
+    "vigencia": "1 año (renovable cada marzo).",
+    "alias": [
+      "permiso de circulacion",
+      "sacar permiso circulacion",
+      "renovar permiso circulacion",
+      "permiso circulacion vehiculo",
+      "permiso circulacion auto",
+      "permiso municipal auto"
+    ],
+    "enlace_oficial": "https://www.penalolen.cl/tramites/permiso-circulacion"
+  }
+]
