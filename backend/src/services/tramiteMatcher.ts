@@ -1,4 +1,4 @@
-import { FichaTramite } from "../types/ficha";
+import type { FichaTramite } from "../types/ficha";
 
 export function normalize(text: string): string {
   return text

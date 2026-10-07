@@ -1,4 +1,4 @@
-import { ConsultaResponse } from "../types/tramite";
+import type { ConsultaResponse } from "../types/tramite";
 
 const API_URL = "http://localhost:3001/api/tramites/consultar";
 

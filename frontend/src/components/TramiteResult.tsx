@@ -1,4 +1,4 @@
-import { FichaTramite } from "../types/tramite";
+import type { FichaTramite } from "../types/tramite";
 
 interface Props {
   ficha: FichaTramite;

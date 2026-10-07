@@ -1,4 +1,4 @@
-import { CanalDerivacion } from "../types/tramite";
+import type { CanalDerivacion } from "../types/tramite";
 
 interface Props {
   mensaje: string;

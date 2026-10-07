@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import fichas from "../data/fichas.json";
-import { FichaTramite } from "../types/ficha";
+import type { FichaTramite } from "../types/ficha";
 import { matchTramite } from "../services/tramiteMatcher";
 import { ABSTENCION_MENSAJE, CANAL_DERIVACION } from "../constants/abstention";
 

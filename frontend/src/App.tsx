@@ -4,7 +4,7 @@ import ConsultaForm from "./components/ConsultaForm";
 import TramiteResult from "./components/TramiteResult";
 import AbstentionMessage from "./components/AbstentionMessage";
 import { consultarTramite } from "./services/tramitesApi";
-import { ConsultaResponse } from "./types/tramite";
+import type { ConsultaResponse } from "./types/tramite";
 
 type Estado = "idle" | "loading" | "success" | "no-match" | "error";
 
