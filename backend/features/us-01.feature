@@ -65,6 +65,11 @@ Característica: US-01 Consultar información de un trámite
     Cuando consulto "Compré un auto nuevo, ¿cómo saco el permiso de circulación?"
     Entonces la respuesta es exitosa con el trámite "Obtención de permiso de circulación"
 
+  Escenario: Consulta ambigua - licencia tipo B sin primera/renovación
+    Cuando consulto "licencia tipo b"
+    Entonces el asistente se abstiene de responder
+    Y el mensaje pregunta si es primera licencia o renovación
+
   Escenario: Consulta sin coincidencia - el asistente se abstiene
     Cuando consulto "¿Cómo solicito una licencia de perro?"
     Entonces el asistente se abstiene de responder

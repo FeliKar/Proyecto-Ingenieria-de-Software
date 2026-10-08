@@ -65,6 +65,15 @@ Then("entrega un canal de derivación", function () {
   );
 });
 
+Then(
+  "el mensaje pregunta si es primera licencia o renovación",
+  function () {
+    const mensaje: string = response.body.mensaje.toLowerCase();
+    assert.ok(mensaje.includes("primera") && mensaje.includes("renovar"));
+    assert.strictEqual(response.body.motivo, "ambiguo");
+  }
+);
+
 Then("el servidor responde con un error de solicitud inválida", function () {
   assert.strictEqual(response.status, 400);
   assert.ok(typeof response.body.error === "string");

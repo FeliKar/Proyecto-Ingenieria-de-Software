@@ -1,8 +1,12 @@
 import { Router, Request, Response } from "express";
 import fichas from "../data/fichas.json";
 import type { FichaTramite } from "../types/ficha";
-import { matchTramite } from "../services/tramiteMatcher";
-import { ABSTENCION_MENSAJE, CANAL_DERIVACION } from "../constants/abstention";
+import { matchTramiteDetalle } from "../services/tramiteMatcher";
+import {
+  ABSTENCION_MENSAJE,
+  CANAL_DERIVACION,
+  mensajeAmbiguoClase,
+} from "../constants/abstention";
 
 const router = Router();
 
@@ -16,13 +20,20 @@ router.post("/consultar", (req: Request, res: Response) => {
       });
     }
 
-    const ficha = matchTramite(pregunta, fichas as FichaTramite[]);
+    const { ficha, motivo, clase } = matchTramiteDetalle(
+      pregunta,
+      fichas as FichaTramite[]
+    );
 
     if (!ficha) {
       return res.status(200).json({
         encontrado: false,
         abstencion: true,
-        mensaje: ABSTENCION_MENSAJE,
+        motivo,
+        mensaje:
+          motivo === "ambiguo" && clase
+            ? mensajeAmbiguoClase(clase)
+            : ABSTENCION_MENSAJE,
         canal_derivacion: CANAL_DERIVACION,
       });
     }
