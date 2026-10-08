@@ -41,6 +41,17 @@ function App() {
         <AbstentionMessage
           mensaje={respuesta.mensaje}
           canal={respuesta.canal_derivacion}
+          opciones={respuesta.opciones}
+          onElegirOpcion={async (id) => {
+            setEstado("loading");
+            try {
+              const data = await consultarTramite("", id);
+              setRespuesta(data);
+              setEstado(data.encontrado ? "success" : "no-match");
+            } catch {
+              setEstado("error");
+            }
+          }}
         />
       )}
 

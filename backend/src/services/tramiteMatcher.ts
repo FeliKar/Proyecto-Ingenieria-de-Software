@@ -72,7 +72,7 @@ function scoreAlias(preguntaStems: Set<string>, alias: string): number {
 }
 
 function detectarClase(preguntaNormalizada: string): string | null {
-  const conPalabraClase = preguntaNormalizada.match(/clase\s+([a-z0-9]+)/);
+  const conPalabraClase = preguntaNormalizada.match(/(?:clase|tipo)\s+([a-z0-9]+)/);
   if (conPalabraClase) return conPalabraClase[1];
   const trasLicencia = preguntaNormalizada.match(
     /licencia\s+(?:de\s+conducir\s+)?([a-z0-9])\b/
@@ -87,12 +87,24 @@ function tipoFicha(ficha: FichaTramite): "primera" | "renovacion" | null {
   return null;
 }
 
-export function matchTramite(
+export interface OpcionTramite {
+  id: string;
+  tramite: string;
+}
+
+export interface ResultadoMatch {
+  ficha: FichaTramite | null;
+  motivo: "ok" | "ambiguo" | "sin-match";
+  clase?: string;
+  opciones?: OpcionTramite[];
+}
+
+export function matchTramiteDetalle(
   pregunta: string,
   fichas: FichaTramite[]
-): FichaTramite | null {
+): ResultadoMatch {
   const tokensPregunta = tokensDe(pregunta);
-  if (tokensPregunta.length === 0) return null;
+  if (tokensPregunta.length === 0) return { ficha: null, motivo: "sin-match" };
 
   const preguntaNormalizada = normalize(pregunta);
   const clasePregunta = detectarClase(preguntaNormalizada);
@@ -123,10 +135,30 @@ export function matchTramite(
   } else if (intencionRenovacion && !intencionPrimera) {
     candidatas = candidatas.filter((f) => tipoFicha(f) === "renovacion");
   } else if (!intencionPrimera && !intencionRenovacion && hayPrimera && hayRenovacion) {
-    // Sin intención explícita hay dos opciones para esta clase: abstención
-    return null;
+    // Sin intención explícita hay dos opciones (primera vez vs renovación).
+    // Considerar solo las fichas con overlap real con la pregunta.
+    const preguntaStemsTmp = new Set(tokensPregunta.map((t) => stem(t)));
+    const relacionadas = candidatas.filter((f) => {
+      let maxOverlap = 0;
+      for (const alias of f.alias) {
+        const aliasStems = new Set(tokensDe(alias).map(stem));
+        const overlap = [...aliasStems].filter((x) => preguntaStemsTmp.has(x))
+          .length;
+        if (overlap > maxOverlap) maxOverlap = overlap;
+      }
+      return maxOverlap >= 2;
+    });
+    if (relacionadas.length > 0) {
+      return {
+        ficha: null,
+        motivo: "ambiguo",
+        clase: clasePregunta ?? undefined,
+        opciones: relacionadas.map((f) => ({ id: f.id, tramite: f.tramite })),
+      };
+    }
+    return { ficha: null, motivo: "sin-match" };
   }
-  if (candidatas.length === 0) return null;
+  if (candidatas.length === 0) return { ficha: null, motivo: "sin-match" };
 
   fichas = candidatas;
 
@@ -178,12 +210,19 @@ export function matchTramite(
     .filter((p) => p.score >= 0.5 && p.overlap >= 2)
     .sort((a, b) => b.score - a.score);
 
-  if (puntajes.length === 0) return null;
+  if (puntajes.length === 0) return { ficha: null, motivo: "sin-match" };
 
   // Empate → abstención
   if (puntajes.length > 1 && puntajes[0].score === puntajes[1].score) {
-    return null;
+    return { ficha: null, motivo: "sin-match" };
   }
 
-  return puntajes[0].ficha;
+  return { ficha: puntajes[0].ficha, motivo: "ok" };
+}
+
+export function matchTramite(
+  pregunta: string,
+  fichas: FichaTramite[]
+): FichaTramite | null {
+  return matchTramiteDetalle(pregunta, fichas).ficha;
 }

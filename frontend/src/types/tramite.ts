@@ -23,7 +23,9 @@ export interface ConsultaNoMatch {
   encontrado: false;
   abstencion: true;
   mensaje: string;
+  motivo?: "ok" | "ambiguo" | "sin-match";
   canal_derivacion: CanalDerivacion;
+  opciones?: { id: string; tramite: string }[];
 }
 
 export type ConsultaResponse = ConsultaSuccess | ConsultaNoMatch;
