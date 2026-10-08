@@ -14,11 +14,11 @@ Característica: US-01 Consultar información de un trámite
 
   Escenario: Renovar licencia clase B
     Cuando consulto "Quiero renovar mi licencia clase B"
-    Entonces la respuesta es exitosa con el trámite "Renovación de licencia clase B"
+    Entonces la respuesta es exitosa con el trámite "Control o renovaciones de licencias clases B, C, D y F"
 
   Escenario: Renovar licencia B sin la palabra "clase"
     Cuando consulto "Necesito renovar la licencia B"
-    Entonces la respuesta es exitosa con el trámite "Renovación de licencia clase B"
+    Entonces la respuesta es exitosa con el trámite "Control o renovaciones de licencias clases B, C, D y F"
 
   Escenario: Sacar licencia clase B sin especificar primera vez o renovación
     Cuando consulto "Necesito sacar licencia clase B"
@@ -37,6 +37,23 @@ Característica: US-01 Consultar información de un trámite
 
   Escenario: Renovar licencia de clase distinta a B
     Cuando consulto "Quiero renovar licencia C"
+    Entonces la respuesta es exitosa con el trámite "Control o renovaciones de licencias clases B, C, D y F"
+
+  Escenario: Primera licencia clase C
+    Cuando consulto "Quiero sacar mi primera licencia clase C"
+    Entonces la respuesta es exitosa con el trámite "Solicitud de licencia clase C"
+    Y la ficha incluye el enlace oficial de tramites.penalolen.cl
+
+  Escenario: Primera licencia clase D
+    Cuando consulto "Quiero sacar mi primera licencia clase D"
+    Entonces la respuesta es exitosa con el trámite "Solicitud de licencia clase D"
+
+  Escenario: Renovar licencia clase D
+    Cuando consulto "Quiero renovar licencia clase D"
+    Entonces la respuesta es exitosa con el trámite "Control o renovaciones de licencias clases B, C, D y F"
+
+  Escenario: Sacar licencia clase C sin especificar primera vez o renovación
+    Cuando consulto "Quiero sacar licencia clase C"
     Entonces el asistente se abstiene de responder
     Y entrega un canal de derivación
 

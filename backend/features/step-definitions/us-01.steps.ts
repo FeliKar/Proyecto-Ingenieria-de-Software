@@ -34,6 +34,18 @@ Then(
   }
 );
 
+Then(
+  "la ficha incluye el enlace oficial de tramites.penalolen.cl",
+  function () {
+    assert.ok(
+      typeof response.body.ficha.enlace_oficial === "string" &&
+        response.body.ficha.enlace_oficial.startsWith(
+          "https://tramites.penalolen.cl/"
+        )
+    );
+  }
+);
+
 Then("el asistente se abstiene de responder", function () {
   assert.strictEqual(response.status, 200);
   assert.strictEqual(response.body.encontrado, false);

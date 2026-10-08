@@ -25,36 +25,98 @@
       "obtener licencia b",
       "nueva licencia clase b"
     ],
-    "enlace_oficial": "https://www.penalolen.cl/tramites/licencia-clase-b",
+    "enlace_oficial": "https://tramites.penalolen.cl/Tramites/ver/solicitud-de-primera-licencia-no-profesional-clase-b-para-mayores-de-18-anos",
     "clase": "B"
   },
   {
-    "id": "licencia-b-renovacion",
-    "tramite": "Renovación de licencia clase B",
+    "id": "control-o-renovaciones-licencias",
+    "tramite": "Control o renovaciones de licencias clases B, C, D y F",
     "requisitos": [
-      "Licencia clase B anterior vigente o vencida.",
+      "Licencia de conducir anterior vigente o vencida.",
       "Cédula de identidad vigente.",
       "Certificado médico psicotécnico vigente.",
       "No tener multas graves impagas."
     ],
     "pasos": [
       "Solicitar hora en la Dirección de Tránsito Municipal.",
-      "Presentar documentación requerida.",
-      "Realizar examen psicotécnico.",
-      "Pagar los derechos de renovación.",
+      "Presentar la documentación requerida.",
+      "Realizar el control o examen psicotécnico.",
+      "Pagar los derechos correspondientes.",
       "Retirar la licencia renovada."
     ],
-    "vigencia": "6 años desde su emisión.",
+    "vigencia": "Según la clase de licencia (renovación por vigencia vencida).",
     "alias": [
       "renovar licencia",
       "renovar licencia clase b",
       "renovacion licencia clase b",
       "renovar licencia b",
+      "renovar licencia clase c",
+      "renovar licencia clase d",
+      "renovar licencia clase f",
+      "control licencias",
       "licencia vencida",
       "segunda licencia clase b"
     ],
-    "enlace_oficial": "https://www.penalolen.cl/tramites/renovacion-licencia-clase-b",
-    "clase": "B"
+    "enlace_oficial": "https://tramites.penalolen.cl/Tramites/ver/control-o-renovaciones-de-licencias-clases-b-c-d-f",
+    "clase": "B,C,D,F"
+  },
+  {
+    "id": "licencia-c-primera",
+    "tramite": "Solicitud de licencia clase C",
+    "requisitos": [
+      "Ser mayor de 18 años.",
+      "Cédula de identidad vigente.",
+      "Certificado de estudios (mínimo 8° básico aprobado).",
+      "Examen teórico y práctico aprobado.",
+      "Certificado médico psicotécnico vigente."
+    ],
+    "pasos": [
+      "Inscribirse en la Dirección de Tránsito Municipal.",
+      "Rendir el examen teórico.",
+      "Rendir el examen práctico.",
+      "Pagar los derechos correspondientes.",
+      "Retirar la licencia en la fecha indicada."
+    ],
+    "vigencia": "6 años desde su emisión.",
+    "alias": [
+      "sacar licencia clase c",
+      "licencia clase c",
+      "licencia c",
+      "primera licencia clase c",
+      "obtener licencia clase c",
+      "licencia no profesional clase c"
+    ],
+    "enlace_oficial": "https://tramites.penalolen.cl/Tramites/ver/solicitud-de-licencia-clase-c",
+    "clase": "C"
+  },
+  {
+    "id": "licencia-d-primera",
+    "tramite": "Solicitud de licencia clase D",
+    "requisitos": [
+      "Ser mayor de 18 años.",
+      "Cédula de identidad vigente.",
+      "Certificado de estudios (mínimo 8° básico aprobado).",
+      "Examen teórico y práctico aprobado.",
+      "Certificado médico psicotécnico vigente."
+    ],
+    "pasos": [
+      "Inscribirse en la Dirección de Tránsito Municipal.",
+      "Rendir el examen teórico.",
+      "Rendir el examen práctico.",
+      "Pagar los derechos correspondientes.",
+      "Retirar la licencia en la fecha indicada."
+    ],
+    "vigencia": "6 años desde su emisión.",
+    "alias": [
+      "sacar licencia clase d",
+      "licencia clase d",
+      "licencia d",
+      "primera licencia clase d",
+      "obtener licencia clase d",
+      "licencia no profesional clase d"
+    ],
+    "enlace_oficial": "https://tramites.penalolen.cl/Tramites/ver/solicitud-licencia-clase-d",
+    "clase": "D"
   },
   {
     "id": "permiso-circulacion-primera",
