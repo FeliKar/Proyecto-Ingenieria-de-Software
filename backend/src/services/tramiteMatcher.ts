@@ -71,12 +71,56 @@ function scoreAlias(preguntaStems: Set<string>, alias: string): number {
   return overlap / aliasStems.size;
 }
 
+function detectarClase(preguntaNormalizada: string): string | null {
+  const conPalabraClase = preguntaNormalizada.match(/clase\s+([a-z0-9]+)/);
+  if (conPalabraClase) return conPalabraClase[1];
+  const trasLicencia = preguntaNormalizada.match(
+    /licencia\s+(?:de\s+conducir\s+)?([a-z0-9])\b/
+  );
+  if (trasLicencia) return trasLicencia[1];
+  return null;
+}
+
+function tipoFicha(ficha: FichaTramite): "primera" | "renovacion" | null {
+  if (/renov/.test(ficha.id)) return "renovacion";
+  if (/primer/.test(ficha.id)) return "primera";
+  return null;
+}
+
 export function matchTramite(
   pregunta: string,
   fichas: FichaTramite[]
 ): FichaTramite | null {
   const tokensPregunta = tokensDe(pregunta);
   if (tokensPregunta.length === 0) return null;
+
+  const preguntaNormalizada = normalize(pregunta);
+  const clasePregunta = detectarClase(preguntaNormalizada);
+  const intencionPrimera = tokensPregunta.some((t) =>
+    /^(primer|nuev|compr)/.test(t)
+  );
+  const intencionRenovacion = tokensPregunta.some(
+    (t) => stem(t) === "renov" || /^venc/.test(t)
+  );
+
+  // Filtrar candidatas por clase explícita y por intención (primera vs renovación)
+  let candidatas = fichas;
+  if (clasePregunta !== null) {
+    candidatas = candidatas.filter(
+      (f) => f.clase === undefined || f.clase.toLowerCase() === clasePregunta
+    );
+  }
+  if (intencionPrimera && !intencionRenovacion) {
+    candidatas = candidatas.filter((f) => tipoFicha(f) === "primera");
+  } else if (intencionRenovacion && !intencionPrimera) {
+    candidatas = candidatas.filter((f) => tipoFicha(f) === "renovacion");
+  } else if (!intencionPrimera && !intencionRenovacion) {
+    // Sin intención explícita no se puede decidir entre primera vez y renovación
+    candidatas = candidatas.filter((f) => tipoFicha(f) === null);
+  }
+  if (candidatas.length === 0) return null;
+
+  fichas = candidatas;
 
   // Vocabulario: todas las palabras de aliases y nombres + formas extra
   const vocab = new Set<string>();

@@ -5,6 +5,7 @@ export interface FichaTramite {
   pasos: string[];
   vigencia: string;
   enlace_oficial: string;
+  clase?: string;
 }
 
 export interface CanalDerivacion {

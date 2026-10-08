@@ -25,7 +25,8 @@
       "obtener licencia b",
       "nueva licencia clase b"
     ],
-    "enlace_oficial": "https://www.penalolen.cl/tramites/licencia-clase-b"
+    "enlace_oficial": "https://www.penalolen.cl/tramites/licencia-clase-b",
+    "clase": "B"
   },
   {
     "id": "licencia-b-renovacion",
@@ -52,11 +53,12 @@
       "licencia vencida",
       "segunda licencia clase b"
     ],
-    "enlace_oficial": "https://www.penalolen.cl/tramites/renovacion-licencia-clase-b"
+    "enlace_oficial": "https://www.penalolen.cl/tramites/renovacion-licencia-clase-b",
+    "clase": "B"
   },
   {
-    "id": "permiso-circulacion",
-    "tramite": "Permiso de circulación",
+    "id": "permiso-circulacion-primera",
+    "tramite": "Obtención de permiso de circulación",
     "requisitos": [
       "Certificado de revisión técnica vigente.",
       "Seguro obligatorio (SOAP) vigente.",
@@ -71,13 +73,39 @@
     ],
     "vigencia": "1 año (renovable cada marzo).",
     "alias": [
-      "permiso de circulacion",
+      "sacar permiso de circulacion",
       "sacar permiso circulacion",
-      "renovar permiso circulacion",
+      "obtener permiso circulacion",
       "permiso circulacion vehiculo",
       "permiso circulacion auto",
-      "permiso municipal auto"
+      "permiso municipal auto",
+      "auto nuevo",
+      "permiso circulacion auto nuevo"
     ],
     "enlace_oficial": "https://www.penalolen.cl/tramites/permiso-circulacion"
+  },
+  {
+    "id": "permiso-circulacion-renovacion",
+    "tramite": "Renovación de permiso de circulación",
+    "requisitos": [
+      "Permiso de circulación anterior.",
+      "Certificado de revisión técnica vigente.",
+      "Seguro obligatorio (SOAP) vigente.",
+      "Factura o padrón del vehículo."
+    ],
+    "pasos": [
+      "Reunir los documentos requeridos.",
+      "Pagar el valor de la renovación del permiso.",
+      "Pegar el distintivo actualizado en el parabrisas."
+    ],
+    "vigencia": "1 año (renovable cada marzo).",
+    "alias": [
+      "renovar permiso de circulacion",
+      "renovar permiso circulacion",
+      "renovacion permiso circulacion",
+      "permiso circulacion vencido",
+      "permiso circulacion por vencer"
+    ],
+    "enlace_oficial": "https://www.penalolen.cl/tramites/renovacion-permiso-circulacion"
   }
 ]

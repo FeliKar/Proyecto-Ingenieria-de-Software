@@ -6,4 +6,5 @@ export interface FichaTramite {
   vigencia: string;
   alias: string[];
   enlace_oficial: string;
+  clase?: string;
 }
