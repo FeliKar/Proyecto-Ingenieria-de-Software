@@ -107,16 +107,24 @@ export function matchTramite(
   let candidatas = fichas;
   if (clasePregunta !== null) {
     candidatas = candidatas.filter(
-      (f) => f.clase === undefined || f.clase.toLowerCase() === clasePregunta
+      (f) =>
+        f.clase === undefined ||
+        f.clase
+          .toLowerCase()
+          .split(",")
+          .map((c) => c.trim())
+          .includes(clasePregunta)
     );
   }
+  const hayPrimera = candidatas.some((f) => tipoFicha(f) === "primera");
+  const hayRenovacion = candidatas.some((f) => tipoFicha(f) === "renovacion");
   if (intencionPrimera && !intencionRenovacion) {
     candidatas = candidatas.filter((f) => tipoFicha(f) === "primera");
   } else if (intencionRenovacion && !intencionPrimera) {
     candidatas = candidatas.filter((f) => tipoFicha(f) === "renovacion");
-  } else if (!intencionPrimera && !intencionRenovacion) {
-    // Sin intención explícita no se puede decidir entre primera vez y renovación
-    candidatas = candidatas.filter((f) => tipoFicha(f) === null);
+  } else if (!intencionPrimera && !intencionRenovacion && hayPrimera && hayRenovacion) {
+    // Sin intención explícita hay dos opciones para esta clase: abstención
+    return null;
   }
   if (candidatas.length === 0) return null;
 
