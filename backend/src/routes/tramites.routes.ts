@@ -52,8 +52,10 @@ router.post("/consultar", (req: Request, res: Response) => {
         abstencion: true,
         motivo,
         mensaje:
-          motivo === "ambiguo" && clase
-            ? mensajeAmbiguoClase(clase)
+          motivo === "ambiguo"
+            ? clase
+              ? mensajeAmbiguoClase(clase)
+              : "Encontré varios trámites que podrían ser lo que buscas. ¿Lo necesitas por primera vez o quieres renovar el trámite? Elige una de las opciones."
             : ABSTENCION_MENSAJE,
         canal_derivacion: CANAL_DERIVACION,
         ...(opciones ? { opciones } : {}),

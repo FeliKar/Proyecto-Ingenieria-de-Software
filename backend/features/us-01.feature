@@ -71,6 +71,22 @@ Característica: US-01 Consultar información de un trámite
     Y el mensaje pregunta si es primera licencia o renovación
     Y la respuesta incluye opciones para desambiguar
 
+  Escenario: Permiso de circulación sin especificar primera vez o renovación
+    Cuando consulto "permiso de circulación"
+    Entonces el asistente se abstiene de responder
+    Y el mensaje pregunta si es primera vez o renovación
+    Y la respuesta incluye opciones para desambiguar
+
+  Escenario: Elegir la opción de obtención de permiso
+    Cuando consulto "permiso de circulación"
+    Y elijo la opción "Obtención" por su identificador
+    Entonces la respuesta es exitosa con el trámite "Obtención de permiso de circulación"
+
+  Escenario: Elegir la opción de renovación de permiso
+    Cuando consulto "permiso de circulación"
+    Y elijo la opción "Renovación" por su identificador
+    Entonces la respuesta es exitosa con el trámite "Renovación de permiso de circulación"
+
   Escenario: Elegir una opción en la consulta ambigua devuelve la ficha correcta
     Cuando consulto "licencia tipo b"
     Y elijo la opción "Control o renovaciones" por su identificador

@@ -74,6 +74,15 @@ Then(
   }
 );
 
+Then(
+  "el mensaje pregunta si es primera vez o renovación",
+  function () {
+    const mensaje: string = response.body.mensaje.toLowerCase();
+    assert.ok(mensaje.includes("primera vez") && mensaje.includes("renovar"));
+    assert.strictEqual(response.body.motivo, "ambiguo");
+  }
+);
+
 Then("la respuesta incluye opciones para desambiguar", function () {
   const opciones = response.body.opciones as { id: string; tramite: string }[];
   assert.ok(Array.isArray(opciones) && opciones.length === 2);

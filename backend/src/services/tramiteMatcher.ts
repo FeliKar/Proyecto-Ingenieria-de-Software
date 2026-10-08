@@ -135,21 +135,24 @@ export function matchTramiteDetalle(
   } else if (intencionRenovacion && !intencionPrimera) {
     candidatas = candidatas.filter((f) => tipoFicha(f) === "renovacion");
   } else if (!intencionPrimera && !intencionRenovacion && hayPrimera && hayRenovacion) {
-    // Sin intención explícita hay dos opciones para esta clase: abstención
-    if (clasePregunta !== null) {
-      const relacionadas = candidatas.filter(
-        (f) =>
-          f.clase !== undefined &&
-          f.clase
-            .toLowerCase()
-            .split(",")
-            .map((c) => c.trim())
-            .includes(clasePregunta)
-      );
+    // Sin intención explícita hay dos opciones (primera vez vs renovación).
+    // Considerar solo las fichas con overlap real con la pregunta.
+    const preguntaStemsTmp = new Set(tokensPregunta.map((t) => stem(t)));
+    const relacionadas = candidatas.filter((f) => {
+      let maxOverlap = 0;
+      for (const alias of f.alias) {
+        const aliasStems = new Set(tokensDe(alias).map(stem));
+        const overlap = [...aliasStems].filter((x) => preguntaStemsTmp.has(x))
+          .length;
+        if (overlap > maxOverlap) maxOverlap = overlap;
+      }
+      return maxOverlap >= 2;
+    });
+    if (relacionadas.length > 0) {
       return {
         ficha: null,
         motivo: "ambiguo",
-        clase: clasePregunta,
+        clase: clasePregunta ?? undefined,
         opciones: relacionadas.map((f) => ({ id: f.id, tramite: f.tramite })),
       };
     }
