@@ -69,6 +69,12 @@ Característica: US-01 Consultar información de un trámite
     Cuando consulto "licencia tipo b"
     Entonces el asistente se abstiene de responder
     Y el mensaje pregunta si es primera licencia o renovación
+    Y la respuesta incluye opciones para desambiguar
+
+  Escenario: Elegir una opción en la consulta ambigua devuelve la ficha correcta
+    Cuando consulto "licencia tipo b"
+    Y elijo la opción "Control o renovaciones" por su identificador
+    Entonces la respuesta es exitosa con el trámite "Control o renovaciones de licencias clases B, C, D y F"
 
   Escenario: Consulta sin coincidencia - el asistente se abstiene
     Cuando consulto "¿Cómo solicito una licencia de perro?"

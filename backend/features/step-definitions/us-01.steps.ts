@@ -74,6 +74,25 @@ Then(
   }
 );
 
+Then("la respuesta incluye opciones para desambiguar", function () {
+  const opciones = response.body.opciones as { id: string; tramite: string }[];
+  assert.ok(Array.isArray(opciones) && opciones.length === 2);
+});
+
+Then(
+  "elijo la opción {string} por su identificador",
+  async function (termino: string) {
+    const opciones = response.body.opciones as { id: string; tramite: string }[];
+    const elegida = opciones.find((o) =>
+      o.tramite.toLowerCase().includes(termino.toLowerCase())
+    );
+    assert.ok(elegida, `No se encontró opción con '${termino}'`);
+    response = await request(app)
+      .post("/api/tramites/consultar")
+      .send({ tramiteId: elegida.id });
+  }
+);
+
 Then("el servidor responde con un error de solicitud inválida", function () {
   assert.strictEqual(response.status, 400);
   assert.ok(typeof response.body.error === "string");

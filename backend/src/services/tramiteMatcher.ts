@@ -87,10 +87,16 @@ function tipoFicha(ficha: FichaTramite): "primera" | "renovacion" | null {
   return null;
 }
 
+export interface OpcionTramite {
+  id: string;
+  tramite: string;
+}
+
 export interface ResultadoMatch {
   ficha: FichaTramite | null;
   motivo: "ok" | "ambiguo" | "sin-match";
   clase?: string;
+  opciones?: OpcionTramite[];
 }
 
 export function matchTramiteDetalle(
@@ -131,7 +137,21 @@ export function matchTramiteDetalle(
   } else if (!intencionPrimera && !intencionRenovacion && hayPrimera && hayRenovacion) {
     // Sin intención explícita hay dos opciones para esta clase: abstención
     if (clasePregunta !== null) {
-      return { ficha: null, motivo: "ambiguo", clase: clasePregunta };
+      const relacionadas = candidatas.filter(
+        (f) =>
+          f.clase !== undefined &&
+          f.clase
+            .toLowerCase()
+            .split(",")
+            .map((c) => c.trim())
+            .includes(clasePregunta)
+      );
+      return {
+        ficha: null,
+        motivo: "ambiguo",
+        clase: clasePregunta,
+        opciones: relacionadas.map((f) => ({ id: f.id, tramite: f.tramite })),
+      };
     }
     return { ficha: null, motivo: "sin-match" };
   }

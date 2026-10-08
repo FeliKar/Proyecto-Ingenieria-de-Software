@@ -38,10 +38,35 @@ function App() {
       )}
 
       {estado === "no-match" && respuesta && !respuesta.encontrado && (
-        <AbstentionMessage
-          mensaje={respuesta.mensaje}
-          canal={respuesta.canal_derivacion}
-        />
+        <>
+          <AbstentionMessage
+            mensaje={respuesta.mensaje}
+            canal={respuesta.canal_derivacion}
+          />
+          {respuesta.opciones && respuesta.opciones.length > 0 && (
+            <div className="opciones">
+              <p>¿Cuál de estos trámites necesitas?</p>
+              {respuesta.opciones.map((opcion) => (
+                <button
+                  key={opcion.id}
+                  type="button"
+                  onClick={async () => {
+                    setEstado("loading");
+                    try {
+                      const data = await consultarTramite("", opcion.id);
+                      setRespuesta(data);
+                      setEstado(data.encontrado ? "success" : "no-match");
+                    } catch {
+                      setEstado("error");
+                    }
+                  }}
+                >
+                  {opcion.tramite}
+                </button>
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       {estado === "error" && (
