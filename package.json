@@ -1,0 +1,24 @@
+{
+  "name": "proyecto-ingenieria-de-software",
+  "version": "1.0.0",
+  "description": "Asistente virtual de trámites y servicios municipales\r para la Municipalidad de Peñalolén.",
+  "scripts": {
+    "dev": "concurrently \"npm:dev:backend\" \"npm:dev:frontend\"",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FeliKar/Proyecto-Ingenieria-de-Software.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/FeliKar/Proyecto-Ingenieria-de-Software/issues"
+  },
+  "homepage": "https://github.com/FeliKar/Proyecto-Ingenieria-de-Software#readme",
+  "devDependencies": {
+    "concurrently": "^10.0.5"
+  }
+}
