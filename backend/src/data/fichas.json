@@ -144,7 +144,7 @@
       "auto nuevo",
       "permiso circulacion auto nuevo"
     ],
-    "enlace_oficial": "https://www.penalolen.cl/tramites/permiso-circulacion"
+    "enlace_oficial": "https://tramites.penalolen.cl/Tramites/ver/pago-permiso-de-circulacion"
   },
   {
     "id": "permiso-circulacion-renovacion",
@@ -168,6 +168,6 @@
       "permiso circulacion vencido",
       "permiso circulacion por vencer"
     ],
-    "enlace_oficial": "https://www.penalolen.cl/tramites/renovacion-permiso-circulacion"
+    "enlace_oficial": "https://tramites.penalolen.cl/Tramites/ver/pago-permiso-de-circulacion"
   }
 ]
