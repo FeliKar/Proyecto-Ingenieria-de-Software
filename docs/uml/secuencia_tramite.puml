@@ -1,0 +1,40 @@
+@startuml
+title Figura 4.3 · Secuencia de Consultar trámite
+actor Vecino
+participant "ConsultaForm\n(React)" as FE
+participant "tramitesApi\n(cliente HTTP)" as API
+participant "TramitesRoutes\n(Express)" as R
+participant TramiteMatcher as M
+database "fichas.json" as J
+
+Vecino -> FE : escribe pregunta
+FE -> API : consultarTramite(pregunta)
+API -> R : POST /api/tramites/consultar {pregunta}
+R -> J : cargar fichas (import al iniciar)
+J --> R : FichaTramite[]
+R -> M : matchTramiteDetalle(pregunta, fichas)
+alt hay ficha (motivo "ok")
+  M --> R : {ficha}
+  R --> API : 200 {encontrado: true, ficha}
+  API --> FE : ficha
+  FE --> Vecino : TramiteResult: requisitos, pasos, vigencia, enlace oficial
+else consulta ambigua (motivo "ambiguo")
+  M --> R : {ficha: null, opciones}
+  R --> API : 200 {encontrado: false, mensaje, opciones}
+  API --> FE : opciones
+  FE --> Vecino : AbstentionMessage con botones (primera vez / renovación)
+  Vecino -> FE : elige una opción
+  FE -> API : consultarTramite("", tramiteId)
+  API -> R : POST /api/tramites/consultar {tramiteId}
+  R -> J : buscar ficha por id
+  J --> R : ficha
+  R --> API : 200 {encontrado: true, ficha}
+  API --> FE : ficha
+  FE --> Vecino : TramiteResult
+else sin match (motivo "sin-match")
+  M --> R : {ficha: null}
+  R --> API : 200 {encontrado: false, mensaje, canal_derivacion}
+  API --> FE : abstención
+  FE --> Vecino : AbstentionMessage: mensaje + canal oficial
+end
+@enduml

@@ -1,0 +1,25 @@
+@startuml
+title Figura 4.4 · Componentes y despliegue hoy (1 nodo · monolito cliente-servidor)
+left to right direction
+skinparam rectangle {
+  BorderColor #1F3A5F
+  RoundCorner 10
+}
+
+rectangle "**Navegador (celular)**\n\nconsume HTTP\nhttp://localhost:5173" as NAV #F5F6F2
+
+rectangle "**frontend :5173** (puerto por defecto de Vite)\n\nprovee UI React + TypeScript\nConsultaForm · TramiteResult ·\nAbstentionMessage\nconsume API (tramitesApi)" as FE #EEF3FA
+
+rectangle "**backend :3001** (Express, fijo en index.ts)\n\nprovee REST POST /api/tramites/consultar\nTramitesRoutes → TramiteMatcher\nabstention.ts" as BE #EEF3FA
+
+database "**fichas.json**\n\nfuente de verdad\nfichas sintéticas · sin BD" as J #FFF2CC
+
+NAV -- FE : HTTP
+FE -- BE : HTTP
+BE -- J : lee
+
+legend bottom left
+  Nodo único = máquina del equipo (dev/testing). Se levanta con npm run dev. Si 5173 está ocupado, Vite usa el siguiente libre (5174…). React no accede directamente a fichas.json.
+  **2 procesos + UN JSON ≠ microservicios.**
+endlegend
+@enduml

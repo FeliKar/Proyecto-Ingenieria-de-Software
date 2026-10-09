@@ -1,0 +1,27 @@
+@startuml
+title Figura 4.1 · Casos de uso del alcance Sprint 1
+left to right direction
+skinparam usecase {
+  BackgroundColor #EEF3FA
+  BorderColor #1F3A5F
+}
+skinparam actorBorderColor #1F3A5F
+
+actor "Vecino\n(actor primario)" as Vecino
+
+usecase "**UC-01 Consultar trámite**\nMust · US-01" as UC01
+usecase "**UC-02 Recibir enlace oficial**\nMust · US-06" as UC02
+usecase "**UC-03 Recibir aviso de abstención**\nMust · US-09" as UC03
+usecase "**UC-04 Elegir entre primera vez\no renovación**\nUS-01 · consulta ambigua" as UC04
+
+Vecino -- UC01
+Vecino -- UC02
+Vecino -- UC03
+UC01 ..> UC02 : <<include>>
+UC04 ..> UC01 : <<extend>>
+
+legend bottom left
+  Alcance S1 = consulta de licencias (B, C, D) y permiso de circulación con fichas sintéticas.
+  WhatsApp, LLM y panel de actualización quedan fuera (Won't · S2+).
+endlegend
+@enduml
