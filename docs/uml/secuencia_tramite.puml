@@ -10,7 +10,8 @@ database "fichas.json" as J
 Vecino -> FE : escribe pregunta
 FE -> API : consultarTramite(pregunta)
 API -> R : POST /api/tramites/consultar {pregunta}
-R -> J : fichas (cargadas al iniciar con import)
+R -> J : cargar fichas (import al iniciar)
+J --> R : FichaTramite[]
 R -> M : matchTramiteDetalle(pregunta, fichas)
 alt hay ficha (motivo "ok")
   M --> R : {ficha}
@@ -26,6 +27,7 @@ else consulta ambigua (motivo "ambiguo")
   FE -> API : consultarTramite("", tramiteId)
   API -> R : POST /api/tramites/consultar {tramiteId}
   R -> J : buscar ficha por id
+  J --> R : ficha
   R --> API : 200 {encontrado: true, ficha}
   API --> FE : ficha
   FE --> Vecino : TramiteResult
