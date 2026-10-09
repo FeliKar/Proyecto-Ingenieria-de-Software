@@ -18,7 +18,7 @@ export default function AbstentionMessage({
       <p>{mensaje}</p>
       <h3>{canal.nombre}</h3>
       <p>{canal.descripcion}</p>
-      <a href={canal.url} target="_blank" rel="noreferrer">
+      <a href={canal.url} target="_blank" rel="noopener noreferrer">
         Ir al canal oficial
       </a>
       {opciones && opciones.length > 0 && (

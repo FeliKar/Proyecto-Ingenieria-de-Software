@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Asistente virtual de trámites y servicios municipales\r para la Municipalidad de Peñalolén.",
   "scripts": {
+    "test": "npm --prefix backend test && npm --prefix frontend test",
     "dev": "concurrently \"npm:dev:backend\" \"npm:dev:frontend\"",
     "dev:backend": "npm --prefix backend run dev",
     "dev:frontend": "npm --prefix frontend run dev"
