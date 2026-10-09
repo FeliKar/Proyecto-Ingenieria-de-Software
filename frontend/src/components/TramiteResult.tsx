@@ -26,9 +26,15 @@ export default function TramiteResult({ ficha }: Props) {
       <h3>Vigencia</h3>
       <p>{ficha.vigencia}</p>
 
-      <a href={ficha.enlace_oficial} target="_blank" rel="noreferrer">
-        Ver información oficial
-      </a>
+      {ficha.enlace_oficial && (
+        <a
+          href={ficha.enlace_oficial}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Ver información oficial
+        </a>
+      )}
     </div>
   );
 }

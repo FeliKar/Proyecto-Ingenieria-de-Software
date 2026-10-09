@@ -38,6 +38,7 @@ instaladas hasta el momento en MuniChat.
 | @vitejs/plugin-react | devDependencies | ^6.1.1 |
 | typescript | devDependencies | ~6.0.2 |
 | oxlint | devDependencies | ^1.81.0 |
+| tsx | devDependencies | ^4.23.15 |
 | @types/react | devDependencies | ^19.2.18 |
 | @types/react-dom | devDependencies | ^19.2.7 |
 | @types/node | devDependencies | ^24.13.3 |

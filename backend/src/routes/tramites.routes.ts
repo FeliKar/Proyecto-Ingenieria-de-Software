@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import fichas from "../data/fichas.json";
 import type { FichaTramite } from "../types/ficha";
 import { matchTramiteDetalle } from "../services/tramiteMatcher";
+import { cargarFichasValidas } from "../services/fichaValidator";
 import {
   ABSTENCION_MENSAJE,
   CANAL_DERIVACION,
@@ -10,13 +11,19 @@ import {
 
 const router = Router();
 
+// Solo las fichas válidas pueden responder consultas: una ficha sin enlace
+// oficial se rechaza y nunca se sustituye por una URL inventada.
+const fichasValidas: FichaTramite[] = cargarFichasValidas(
+  fichas as FichaTramite[]
+);
+
 router.post("/consultar", (req: Request, res: Response) => {
   try {
     const { pregunta, tramiteId } = req.body ?? {};
 
     // Elección explícita desde la consulta ambigua
     if (typeof tramiteId === "string" && tramiteId.trim().length > 0) {
-      const ficha = (fichas as FichaTramite[]).find((f) => f.id === tramiteId);
+      const ficha = fichasValidas.find((f) => f.id === tramiteId);
       if (!ficha) {
         return res
           .status(404)
@@ -43,7 +50,7 @@ router.post("/consultar", (req: Request, res: Response) => {
 
     const { ficha, motivo, clase, opciones } = matchTramiteDetalle(
       pregunta,
-      fichas as FichaTramite[]
+      fichasValidas
     );
 
     if (!ficha) {
