@@ -8,6 +8,11 @@ import {
   mensajeAmbiguoClase,
 } from "../constants/abstention";
 
+// T15: solo se usan fichas con enlace oficial https (sin null, vacío ni URLs armadas)
+const fichasValidas = (fichas as FichaTramite[]).filter(
+  (f) => typeof f.enlace_oficial === "string" && f.enlace_oficial.startsWith("https://")
+);
+
 const router = Router();
 
 router.post("/consultar", (req: Request, res: Response) => {
@@ -16,7 +21,7 @@ router.post("/consultar", (req: Request, res: Response) => {
 
     // Elección explícita desde la consulta ambigua
     if (typeof tramiteId === "string" && tramiteId.trim().length > 0) {
-      const ficha = (fichas as FichaTramite[]).find((f) => f.id === tramiteId);
+      const ficha = fichasValidas.find((f) => f.id === tramiteId);
       if (!ficha) {
         return res
           .status(404)
@@ -43,7 +48,7 @@ router.post("/consultar", (req: Request, res: Response) => {
 
     const { ficha, motivo, clase, opciones } = matchTramiteDetalle(
       pregunta,
-      fichas as FichaTramite[]
+      fichasValidas
     );
 
     if (!ficha) {
