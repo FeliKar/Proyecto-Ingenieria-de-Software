@@ -1,18 +1,24 @@
 @startuml
 title Figura 4.3 · Secuencia de Consultar trámite
 actor Vecino
-participant "ConsultaForm\n(React)" as FE
+participant "App · ConsultaForm\n(React)" as FE
 participant "tramitesApi\n(cliente HTTP)" as API
 participant "TramitesRoutes\n(Express)" as R
+participant FichaValidator as V
 participant TramiteMatcher as M
 database "fichas.json" as J
 
+== Al iniciar el backend ==
+R -> J : cargar fichas (import)
+J --> R : FichaTramite[]
+R -> V : cargarFichasValidas(fichas)
+V --> R : fichasValidas (sin incompletas ni enlaces no https)
+
+== Consulta del vecino ==
 Vecino -> FE : escribe pregunta
 FE -> API : consultarTramite(pregunta)
 API -> R : POST /api/tramites/consultar {pregunta}
-R -> J : cargar fichas (import al iniciar)
-J --> R : FichaTramite[]
-R -> M : matchTramiteDetalle(pregunta, fichas)
+R -> M : matchTramiteDetalle(pregunta, fichasValidas)
 alt hay ficha (motivo "ok")
   M --> R : {ficha}
   R --> API : 200 {encontrado: true, ficha}
@@ -26,8 +32,7 @@ else consulta ambigua (motivo "ambiguo")
   Vecino -> FE : elige una opción
   FE -> API : consultarTramite("", tramiteId)
   API -> R : POST /api/tramites/consultar {tramiteId}
-  R -> J : buscar ficha por id
-  J --> R : ficha
+  R -> R : buscar ficha por id en fichasValidas
   R --> API : 200 {encontrado: true, ficha}
   API --> FE : ficha
   FE --> Vecino : TramiteResult
