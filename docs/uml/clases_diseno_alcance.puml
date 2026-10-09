@@ -27,42 +27,41 @@ skinparam legend {
 ' Fila 1
 class "<color:#FFFFFF><b>TramitesRoutes</b></color>" as TramitesRoutes {
   {field} + POST /api/tramites/consultar
-  {field} atiende HTTP, no hace matching
-}
-class "<color:#FFFFFF><b>TramiteService</b></color>" as TramiteService {
-  {field} + consultar(pregunta)
-  {field} orquesta: ficha o abstención
+  {field} recibe pregunta o tramiteId y responde
 }
 class "<color:#FFFFFF><b>TramiteMatcher</b></color>" as TramiteMatcher {
-  {field} + matchTramite(pregunta, fichas)
-  {field} null si no hay match o empate
+  {field} + matchTramiteDetalle(pregunta, fichas)
+  {field} decide ficha, ambiguo o sin match
+}
+class "<color:#FFFFFF><b>ResultadoMatch</b></color>" as ResultadoMatch {
+  {field} ficha | null, motivo, clase?, opciones?
+  {field} resultado del matching
 }
 
 ' Fila 2
 class "<color:#FFFFFF><b>Abstencion</b></color>" as Abstencion {
-  {field} mensaje + canal de derivación
-  {field} texto fijo, no usa la pregunta
-}
-class "<color:#FFFFFF><b>FichasLoader</b></color>" as FichasLoader {
-  {field} + cargarFichas()
-  {field} rechaza ficha sin enlace https://
+  {field} ABSTENCION_MENSAJE · CANAL_DERIVACION
+  {field} textos fijos, no usan la pregunta
 }
 class "<color:#FFFFFF><b>FichaTramite</b></color>" as FichaTramite {
-  {field} id, titulo, alias, requisitos,
-  {field} pasos, vigencia, enlace_oficial
+  {field} id, tramite, requisitos, pasos,
+  {field} vigencia, alias, enlace_oficial, clase?
+}
+class "<color:#FFFFFF><b>OpcionTramite</b></color>" as OpcionTramite {
+  {field} id, tramite
+  {field} opción para desambiguar
 }
 
-TramitesRoutes -right- TramiteService
-TramiteService -right- TramiteMatcher
-TramiteService -down- FichasLoader
+TramitesRoutes -right- TramiteMatcher
+TramiteMatcher -right- ResultadoMatch
+TramitesRoutes -down- Abstencion
 TramiteMatcher -down- FichaTramite
-FichasLoader -right- FichaTramite
-TramiteService -- Abstencion
-TramitesRoutes -[hidden]down- Abstencion
-Abstencion -[hidden]right- FichasLoader
+ResultadoMatch -down- OpcionTramite
+Abstencion -[hidden]right- FichaTramite
+FichaTramite -[hidden]right- OpcionTramite
 
 legend bottom left
-  Coherencia: TramitesRoutes → routes/tramites.routes.ts · TramiteMatcher → services/tramiteMatcher.ts · FichaTramite → types/ficha.ts · Abstencion → constants/abstention.ts
-  Pendiente: archivo de TramiteService y FichasLoader. Deuda S1: matching por palabras clave, sin LLM (US-10 en S2+).
+  Coherencia: TramitesRoutes → routes/tramites.routes.ts · TramiteMatcher, ResultadoMatch, OpcionTramite → services/tramiteMatcher.ts · FichaTramite → types/ficha.ts · Abstencion → constants/abstention.ts
+  Deuda S1: TramitesRoutes también carga fichas.json y arma la respuesta (no hay capa de servicio, T4). Matching por palabras clave, sin LLM (US-10 en S2+).
 endlegend
 @enduml
