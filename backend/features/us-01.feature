@@ -100,3 +100,32 @@ Característica: US-01 Consultar información de un trámite
   Escenario: Error - consulta inválida
     Cuando consulto ""
     Entonces el servidor responde con un error de solicitud inválida
+
+  Escenario: Consulta hablada con muletillas - primera licencia clase B
+    Cuando consulto "Eh... hola, eh... quiero saber... para sacar mi primera licencia clase B, por favor"
+    Entonces la respuesta es exitosa con el trámite "Primera licencia clase B"
+
+  Escenario: Consulta hablada con muletillas - renovar permiso de circulación
+    Cuando consulto "Oye, eh... bueno... ¿cómo renuevo el permiso de circulación?"
+    Entonces la respuesta es exitosa con el trámite "Renovación de permiso de circulación"
+
+  Escenario: Consulta hablada con muletillas sin coincidencia
+    Cuando consulto "Eh... hola... eh... quiero saber... para sacar la licencia de mi perro, por favor"
+    Entonces el asistente se abstiene de responder
+    Y entrega un canal de derivación
+
+  Escenario: Consulta hablada - letra B dictada como "be"
+    Cuando consulto "Eh... quiero renovar la licencia tipo be"
+    Entonces la respuesta es exitosa con el trámite "Control o renovaciones de licencias clases B, C, D y F"
+
+  Escenario: Consulta hablada - letra B dictada como "ve" (confusión b/v)
+    Cuando consulto "primera licencia clase ve"
+    Entonces la respuesta es exitosa con el trámite "Primera licencia clase B"
+
+  Escenario: Consulta hablada - letra F dictada como "efe"
+    Cuando consulto "renovar licencia clase efe"
+    Entonces la respuesta es exitosa con el trámite "Control o renovaciones de licencias clases B, C, D y F"
+
+  Escenario: Consulta hablada - preposición entre tipo y la letra
+    Cuando consulto "renovar licencia tipo de b"
+    Entonces la respuesta es exitosa con el trámite "Control o renovaciones de licencias clases B, C, D y F"

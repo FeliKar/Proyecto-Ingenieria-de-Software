@@ -15,6 +15,9 @@ const STOP_WORDS = new Set([
   "del", "mi", "mis", "como", "es", "un", "una", "en", "y", "o", "a", "al",
   "por", "con", "se", "su", "sus", "este", "esta", "ese", "esa", "cuanto",
   "cuando", "donde", "el", "yo", "me",
+  // Muletillas del habla (consultas por voz)
+  "eh", "e", "ah", "hmm", "o", "sea", "bueno", "buenas", "buenos", "hola",
+  "oye", "mira", "porfavor", "favor", "queria", "quisiera", "dime", "ahi",
 ]);
 
 // Raíces para unificar variantes verbales/nominales
@@ -71,9 +74,36 @@ function scoreAlias(preguntaStems: Set<string>, alias: string): number {
   return overlap / aliasStems.size;
 }
 
+// El reconocimiento de voz escribe las letras como suenan: "be" para la letra B,
+// "ví" para la letra V, etc. Se interpretan como la letra correspondiente para
+// que la búsqueda por voz dé los mismos resultados que la escrita.
+const LETRAS_DICTADAS: Record<string, string> = {
+  be: "b",
+  ve: "b",
+  vi: "v",
+  uve: "v",
+  uvi: "v",
+  ce: "c",
+  ese: "s",
+  efe: "f",
+  ele: "l",
+  eme: "m",
+  ene: "n",
+  pe: "p",
+  ge: "g",
+  equis: "x",
+};
+
+// Nota: "de" y "te" no se mapean para no romper frases como "tipo de licencia".
+function letraClase(token: string): string {
+  return LETRAS_DICTADAS[token] ?? token;
+}
+
 function detectarClase(preguntaNormalizada: string): string | null {
-  const conPalabraClase = preguntaNormalizada.match(/(?:clase|tipo)\s+([a-z0-9]+)/);
-  if (conPalabraClase) return conPalabraClase[1];
+  const conPalabraClase = preguntaNormalizada.match(
+    /(?:clase|tipo)\s+(?:(?:de|del|la|el|los|las|un|una)\s+)*([a-z0-9]+)/
+  );
+  if (conPalabraClase) return letraClase(conPalabraClase[1]);
   const trasLicencia = preguntaNormalizada.match(
     /licencia\s+(?:de\s+conducir\s+)?([a-z0-9])\b/
   );
