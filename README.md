@@ -17,6 +17,8 @@ TICS331 — Ingeniería de Software · Universidad Adolfo Ibáñez · Equipo N.�
 
 El vecino consulta un trámite de licencia de conducir (clase B, C o D, primera vez o renovación) o de permiso de circulación, y recibe los requisitos, los pasos, la vigencia y el enlace oficial en tramites.penalolen.cl. Si la consulta es ambigua, el asistente pregunta si es primera vez o renovación. Si no está cubierta, se abstiene y deriva al canal oficial en vez de inventar una respuesta.
 
+Además, `backend/src/data/catalogo.json` incorpora los ~150 trámites publicados en tramites.penalolen.cl **solo con su nombre y enlace oficial** (nunca requisitos inventados); los enlaces que ya cubre una ficha del Sprint 1 se descartan como duplicados al cargar. La búsqueda es tolerante: si dos trámites empatan se ofrecen varias opciones para elegir, y alcanza con usar ~80% de las palabras de un trámite (p. ej. `préstamo de computadores`) para recibir la recomendación.
+
 Historias: US-01 (consultar un trámite), US-06 (recibir el enlace oficial) y US-09 (no inventar información).
 
 ## Requisitos
@@ -73,6 +75,8 @@ En la app escribe, por ejemplo:
 | `Quiero sacar mi primera licencia clase B` | Muestra la ficha con requisitos, pasos, vigencia y "Ver información oficial" |
 | `licencia B` | Pregunta si es primera vez o renovación, con botones |
 | `¿Cómo solicito una licencia de perro?` | Se abstiene y muestra "Ir al canal oficial" |
+| `beca municipal` | Ofrece las dos becas municipales como botones para elegir |
+| `Quiero inscribirme a un taller de guitarra` | Muestra el trámite del catálogo con "Ver información oficial" (sin requisitos inventados) |
 
 ## Pruebas
 
@@ -82,8 +86,8 @@ Todas las pruebas (backend + frontend):
 npm test
 ```
 
-- Backend: escenarios Gherkin de US-01, US-06 y US-09 con Cucumber (`backend/features/`).
-- Frontend: tests del componente de resultado (`frontend/tests/`).
+- Backend: escenarios Gherkin de US-01, US-06 y US-09 con Cucumber (`backend/features/`), más `catalogo.feature` (catálogo de solo enlace, empate con opciones y tolerancia al 80%).
+- Frontend: tests del componente de resultado y de las opciones de desempate (`frontend/tests/`).
 
 Build del frontend:
 
@@ -94,6 +98,7 @@ npm run build --prefix frontend
 ## Qué es real y qué es fake
 
 - **Datos:** las fichas de `backend/src/data/fichas.json` son sintéticas. No se usan las 850 preguntas oficiales del municipio ni datos personales.
+- **Catálogo:** `backend/src/data/catalogo.json` lista los trámites oficiales **solo con nombre y enlace**; jamás se inventan requisitos, pasos ni vigencia (US-09 / `docs/adr-01.md`). Los duplicados de enlaces del Sprint 1 se excluyen al cargar.
 - **Validación:** al iniciar, el backend descarta las fichas incompletas o sin enlace oficial https (`backend/src/services/fichaValidator.ts`).
 - **Sin API municipal:** no hay conexión con sistemas de la Municipalidad.
 - **Sin LLM:** las respuestas salen de un matching por palabras clave, no de un modelo de IA (ver `docs/adr-01.md`).

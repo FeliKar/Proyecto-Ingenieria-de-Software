@@ -15,12 +15,16 @@ const STOP_WORDS = new Set([
   "del", "mi", "mis", "como", "es", "un", "una", "en", "y", "o", "a", "al",
   "por", "con", "se", "su", "sus", "este", "esta", "ese", "esa", "cuanto",
   "cuando", "donde", "el", "yo", "me",
+  // Muletillas del habla (consultas por voz)
+  "eh", "e", "ah", "hmm", "o", "sea", "bueno", "buenas", "buenos", "hola",
+  "oye", "mira", "porfavor", "favor", "queria", "quisiera", "dime", "ahi",
 ]);
 
 // Raíces para unificar variantes verbales/nominales
 function stem(token: string): string {
   if (/^renuev/.test(token) || /^renov/.test(token)) return "renov";
   if (/^vencid/.test(token) || /^venc/.test(token)) return "venc";
+  if (/^adopc/.test(token) || /^adopt/.test(token)) return "adopcion";
   if (/^(sacar|saco|saca|sacas|sacarme|obtener|obtengo|obtencion|conseguir|consigo|comprar|compro|tramitar)$/.test(token))
     return "obtener";
   if (/^pago|pagas|pagar|pagarme$/.test(token)) return "pagar";
@@ -32,6 +36,7 @@ function stem(token: string): string {
 const FORMAS_EXTRA = [
   "renuevo", "renuevas", "renueva", "renovando", "sacar", "saco", "sacas",
   "sacarme", "obtener", "obtengo", "conseguir", "tengo", "quiero",
+  "adoptar", "adopto",
 ];
 
 function tokensDe(texto: string): string[] {
@@ -71,9 +76,37 @@ function scoreAlias(preguntaStems: Set<string>, alias: string): number {
   return overlap / aliasStems.size;
 }
 
+// Letras dictadas por voz que suenan como palabras: "be" para la letra B, "efe"
+// para la letra F, "ví" para la letra V, etc. Se interpretan como la letra
+// correspondiente para que la búsqueda por voz dé los mismos resultados que la
+// escrita.
+const LETRAS_DICTADAS: Record<string, string> = {
+  be: "b",
+  ve: "b",
+  vi: "v",
+  uve: "v",
+  uvi: "v",
+  ce: "c",
+  ese: "s",
+  efe: "f",
+  ele: "l",
+  eme: "m",
+  ene: "n",
+  pe: "p",
+  ge: "g",
+  equis: "x",
+};
+
+// Nota: "de" y "te" no se mapean para no romper frases como "tipo de licencia".
+function letraClase(token: string): string {
+  return LETRAS_DICTADAS[token] ?? token;
+}
+
 function detectarClase(preguntaNormalizada: string): string | null {
-  const conPalabraClase = preguntaNormalizada.match(/(?:clase|tipo)\s+([a-z0-9]+)/);
-  if (conPalabraClase) return conPalabraClase[1];
+  const conPalabraClase = preguntaNormalizada.match(
+    /(?:clase|tipo)\s+(?:(?:de|del|la|el|los|las|un|una)\s+)*([a-z0-9]+)/
+  );
+  if (conPalabraClase) return letraClase(conPalabraClase[1]);
   const trasLicencia = preguntaNormalizada.match(
     /licencia\s+(?:de\s+conducir\s+)?([a-z0-9])\b/
   );
@@ -94,9 +127,39 @@ export interface OpcionTramite {
 
 export interface ResultadoMatch {
   ficha: FichaTramite | null;
-  motivo: "ok" | "ambiguo" | "sin-match";
+  motivo: "ok" | "ambiguo" | "empate" | "sin-match";
   clase?: string;
   opciones?: OpcionTramite[];
+}
+
+// Nivel fuerte: al menos la mitad de las palabras del trámite cubiertas.
+const UMBRAL_FUERTE = 0.5;
+
+// Nivel recomendación: el usuario cubrió al menos el 80% de lo que dijo con
+// este trámite, aunque el trámite sea largo (nombres oficiales extensos).
+const UMBRAL_RECOMENDACION = 0.8;
+
+// Similitud mínima que debe tener una palabra no reconocida para que la consulta
+// siga buscando: por debajo se considera un tema ajeno a los trámites del
+// catálogo y se abstiene (US-09: no inventar).
+const UMBRAL_PALABRA_DESCONOCIDA = 0.5;
+
+// Tamaño máximo de la lista de opciones al haber empate.
+const TOPE_OPCIONES = 5;
+
+interface Puntaje {
+  ficha: FichaTramite;
+  score: number;
+  overlap: number;
+}
+
+// Varios trámites empatados en el primer lugar → se ofrecen como opciones.
+function opcionesEmpate(puntajes: Puntaje[]): OpcionTramite[] {
+  const mejor = puntajes[0].score;
+  return puntajes
+    .filter((p) => p.score === mejor)
+    .slice(0, TOPE_OPCIONES)
+    .map((p) => ({ id: p.ficha.id, tramite: p.ficha.tramite }));
 }
 
 export function matchTramiteDetalle(
@@ -114,6 +177,10 @@ export function matchTramiteDetalle(
   const intencionRenovacion = tokensPregunta.some(
     (t) => stem(t) === "renov" || /^venc/.test(t)
   );
+  // Marca cuando la consulta llegó al caso "primera vez vs renovación" sin tratar
+  // realmente de eso (p. ej. una beca o un taller): entonces se continúa la
+  // búsqueda normal, pero con cuidado si contiene palabras desconocidas.
+  let consultaSinIntencion = false;
 
   // Filtrar candidatas por clase explícita y por intención (primera vs renovación)
   let candidatas = fichas;
@@ -138,7 +205,10 @@ export function matchTramiteDetalle(
     // Sin intención explícita hay dos opciones (primera vez vs renovación).
     // Considerar solo las fichas con overlap real con la pregunta.
     const preguntaStemsTmp = new Set(tokensPregunta.map((t) => stem(t)));
+    // La desambigüedad "primera vez vs renovación" solo aplica a las fichas
+    // completas; las de solo enlace (catálogo) no forman parte de esa pregunta.
     const relacionadas = candidatas.filter((f) => {
+      if (f.solo_enlace) return false;
       let maxOverlap = 0;
       for (const alias of f.alias) {
         const aliasStems = new Set(tokensDe(alias).map(stem));
@@ -156,7 +226,9 @@ export function matchTramiteDetalle(
         opciones: relacionadas.map((f) => ({ id: f.id, tramite: f.tramite })),
       };
     }
-    return { ficha: null, motivo: "sin-match" };
+    // No es una consulta de primera vez vs renovación: se continúa la búsqueda
+    // normal en todas las fichas (catálogo incluido).
+    consultaSinIntencion = true;
   }
   if (candidatas.length === 0) return { ficha: null, motivo: "sin-match" };
 
@@ -174,6 +246,10 @@ export function matchTramiteDetalle(
 
   // Autocorrección difusa: cada token se mapea a la palabra más cercana del vocabulario
   const preguntaStems = new Set<string>();
+  // Mejor similitud de las palabras que no se pudieron mapear (solo interesa si
+  // la consulta vino del caso "sin intención"): si una palabra es muy ajena al
+  // vocabulario de trámites, la consulta trata de otra cosa.
+  let similitudDesconocida = Number.POSITIVE_INFINITY;
   for (const token of tokensPregunta) {
     let mejor: string | null = null;
     let mejorScore = 0;
@@ -190,10 +266,21 @@ export function matchTramiteDetalle(
       if (!["quiero", "tengo", "necesito", "necesitan"].includes(s)) {
         preguntaStems.add(s);
       }
+    } else if (consultaSinIntencion) {
+      similitudDesconocida = Math.min(similitudDesconocida, mejorScore);
     }
   }
 
-  const puntajes = fichas
+  // Consulta sin intención clara con palabras ajenas a los trámites (p. ej.
+  // "perro", "impuesto") → se abstiene en vez de forzar una coincidencia (US-09).
+  if (
+    consultaSinIntencion &&
+    similitudDesconocida < UMBRAL_PALABRA_DESCONOCIDA
+  ) {
+    return { ficha: null, motivo: "sin-match" };
+  }
+
+  const puntajes: Puntaje[] = fichas
     .map((ficha) => {
       let best = 0;
       let bestOverlap = 0;
@@ -207,17 +294,40 @@ export function matchTramiteDetalle(
       }
       return { ficha, score: best, overlap: bestOverlap };
     })
-    .filter((p) => p.score >= 0.5 && p.overlap >= 2)
+    .filter((p) => p.overlap >= 2)
     .sort((a, b) => b.score - a.score);
 
-  if (puntajes.length === 0) return { ficha: null, motivo: "sin-match" };
-
-  // Empate → abstención
-  if (puntajes.length > 1 && puntajes[0].score === puntajes[1].score) {
-    return { ficha: null, motivo: "sin-match" };
+  // Nivel fuerte: coincide al menos la mitad de las palabras del trámite.
+  const fuertes = puntajes.filter((p) => p.score >= UMBRAL_FUERTE);
+  if (fuertes.length > 0) {
+    if (fuertes.length > 1 && fuertes[0].score === fuertes[1].score) {
+      return { ficha: null, motivo: "empate", opciones: opcionesEmpate(fuertes) };
+    }
+    return { ficha: fuertes[0].ficha, motivo: "ok" };
   }
 
-  return { ficha: puntajes[0].ficha, motivo: "ok" };
+  // Nivel recomendación: aunque la consulta use solo el 80% de sus palabras
+  // en un trámite extenso, se entrega la mejor opción (o varias si empatan).
+  if (preguntaStems.size >= 2) {
+    const recomendaciones = puntajes.filter(
+      (p) => p.overlap / preguntaStems.size >= UMBRAL_RECOMENDACION
+    );
+    if (recomendaciones.length > 0) {
+      if (
+        recomendaciones.length > 1 &&
+        recomendaciones[0].score === recomendaciones[1].score
+      ) {
+        return {
+          ficha: null,
+          motivo: "empate",
+          opciones: opcionesEmpate(recomendaciones),
+        };
+      }
+      return { ficha: recomendaciones[0].ficha, motivo: "ok" };
+    }
+  }
+
+  return { ficha: null, motivo: "sin-match" };
 }
 
 export function matchTramite(

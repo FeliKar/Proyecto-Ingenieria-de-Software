@@ -6,6 +6,9 @@ export interface FichaTramite {
   vigencia: string;
   enlace_oficial: string;
   clase?: string;
+  // Trámite del catálogo oficial: solo nombre y enlace, sin requisitos
+  // inventados (la información vive en el sitio del municipio).
+  solo_enlace?: boolean;
 }
 
 export interface CanalDerivacion {
@@ -23,7 +26,7 @@ export interface ConsultaNoMatch {
   encontrado: false;
   abstencion: true;
   mensaje: string;
-  motivo?: "ok" | "ambiguo" | "sin-match";
+  motivo?: "ok" | "ambiguo" | "empate" | "sin-match";
   canal_derivacion: CanalDerivacion;
   opciones?: { id: string; tramite: string }[];
 }
