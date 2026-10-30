@@ -38,3 +38,21 @@ Característica: Catálogo de trámites con solo nombre y enlace oficial
     Cuando consulto "Quiero renovar mi licencia clase B"
     Entonces la respuesta es exitosa con el trámite "Control o renovaciones de licencias clases B, C, D y F"
     Y el trámite incluye requisitos, pasos, vigencia y enlace oficial
+
+  Escenario: Las palabras "primera vez" no descartan un trámite del catálogo
+    Cuando consulto "Quiero inscribirme por primera vez a un taller de guitarra"
+    Entonces la respuesta es exitosa con el trámite "Inscripción a Taller de Guitarra"
+    Y la respuesta es un trámite de solo enlace con el enlace oficial
+
+  Esquema del escenario: Cada trámite se encuentra por su nombre exacto
+    Cuando consulto "<nombre>"
+    Entonces la respuesta es exitosa con el trámite "<nombre>"
+    Y la respuesta es un trámite de solo enlace con el enlace oficial
+
+    Ejemplos:
+      | nombre                                                                                       |
+      | Postulación a proyectos de construcción en nuevos terrenos CNT                               |
+      | Postulación a subsidios para compra de vivienda con crédito hipotecario para sectores medios |
+      | Subsidios para compra de vivienda sin crédito para grupos emergentes                         |
+      | Solicitud de licencias clase F                                                               |
+      | Eximirse de Pago de Permiso de Circulación por no Circulación (Ley 18.440)                   |

@@ -170,6 +170,9 @@ export function matchTramiteDetalle(
   if (tokensPregunta.length === 0) return { ficha: null, motivo: "sin-match" };
 
   const preguntaNormalizada = normalize(pregunta);
+  // Si la consulta es el nombre exacto de un trámite, ese gana.
+  const exacta = fichas.find((f) => normalize(f.tramite) === preguntaNormalizada);
+  if (exacta) return { ficha: exacta, motivo: "ok" };
   const clasePregunta = detectarClase(preguntaNormalizada);
   const intencionPrimera = tokensPregunta.some((t) =>
     /^(primer|nuev|compr)/.test(t)
@@ -198,9 +201,9 @@ export function matchTramiteDetalle(
   const hayPrimera = candidatas.some((f) => tipoFicha(f) === "primera");
   const hayRenovacion = candidatas.some((f) => tipoFicha(f) === "renovacion");
   if (intencionPrimera && !intencionRenovacion) {
-    candidatas = candidatas.filter((f) => tipoFicha(f) === "primera");
+    candidatas = candidatas.filter((f) => f.solo_enlace || tipoFicha(f) === "primera");
   } else if (intencionRenovacion && !intencionPrimera) {
-    candidatas = candidatas.filter((f) => tipoFicha(f) === "renovacion");
+    candidatas = candidatas.filter((f) => f.solo_enlace || tipoFicha(f) === "renovacion");
   } else if (!intencionPrimera && !intencionRenovacion && hayPrimera && hayRenovacion) {
     // Sin intención explícita hay dos opciones (primera vez vs renovación).
     // Considerar solo las fichas con overlap real con la pregunta.
