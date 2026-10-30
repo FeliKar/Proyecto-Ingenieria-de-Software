@@ -68,6 +68,106 @@ function dice(a: string, b: string): number {
   return (2 * comunes) / (a.length - 1 + (b.length - 1));
 }
 
+// --- Corrección ortográfica previa -----------------------------------------
+// Se corrige la consulta antes de detectar clase e intención, para que
+// "lisensia b primra vez" se entienda igual que "licencia b primera vez".
+
+// Palabras clave del dominio que deben corregirse aunque no estén en un trámite.
+const PALABRAS_DOMINIO = [
+  "primera", "primer", "renovar", "renovacion", "vencida", "clase", "tipo",
+  "licencia", "permiso", "circulacion", "sacar", "obtener", "solicitar",
+  "inscribir", "postular",
+];
+
+// Clave fonética del español: iguala letras que suenan igual (s/c/z, b/v,
+// h muda, ll/y, gu/g, qu/k) para que los errores típicos no cuenten.
+function claveFonetica(palabra: string): string {
+  return palabra
+    .replace(/(?<!c)h/g, "")
+    .replace(/qu/g, "k")
+    .replace(/c([eiy])/g, "s$1")
+    .replace(/c/g, "k")
+    .replace(/z/g, "s")
+    .replace(/v/g, "b")
+    .replace(/ll/g, "y")
+    .replace(/gu([ei])/g, "g$1")
+    .replace(/(.)\1+/g, "$1");
+}
+
+// Distancia de Damerau-Levenshtein (con transposición), cortando apenas supera `max`.
+function distanciaAcotada(a: string, b: string, max: number): number {
+  if (Math.abs(a.length - b.length) > max) return max + 1;
+  const d: number[][] = [];
+  for (let i = 0; i <= a.length; i++) d.push([i]);
+  for (let j = 1; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++) {
+    let minFila = Number.POSITIVE_INFINITY;
+    for (let j = 1; j <= b.length; j++) {
+      const costo = a[i - 1] === b[j - 1] ? 0 : 1;
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + costo);
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+        d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
+      }
+      minFila = Math.min(minFila, d[i][j]);
+    }
+    if (minFila > max) return max + 1;
+  }
+  return d[a.length][b.length];
+}
+
+// Vocabulario por conjunto de fichas, calculado una sola vez.
+const vocabularios = new WeakMap<FichaTramite[], Map<string, string>>();
+
+function vocabularioDe(fichas: FichaTramite[]): Map<string, string> {
+  let vocab = vocabularios.get(fichas);
+  if (vocab) return vocab;
+  const palabras = new Set<string>([
+    ...PALABRAS_DOMINIO,
+    ...FORMAS_EXTRA,
+    ...Object.keys(LETRAS_DICTADAS),
+  ]);
+  for (const f of fichas) {
+    for (const t of tokensDe(f.tramite)) palabras.add(t);
+    for (const alias of f.alias) for (const t of tokensDe(alias)) palabras.add(t);
+  }
+  // palabra → su clave fonética
+  vocab = new Map([...palabras].map((p) => [p, claveFonetica(p)]));
+  vocabularios.set(fichas, vocab);
+  return vocab;
+}
+
+function corregirPalabra(palabra: string, vocab: Map<string, string>): string {
+  // Palabras cortas ("de", "b", "efe"), números y conocidas no se tocan.
+  if (palabra.length < 4 || /\d/.test(palabra) || STOP_WORDS.has(palabra) || vocab.has(palabra)) {
+    return palabra;
+  }
+  const max = palabra.length <= 5 ? 1 : 2;
+  const clave = claveFonetica(palabra);
+  let mejor: string | null = null;
+  let mejorDistancia = max + 1;
+  let empatada = false;
+  for (const [candidata, claveCandidata] of vocab) {
+    const dist = distanciaAcotada(clave, claveCandidata, max);
+    if (dist < mejorDistancia) {
+      mejor = candidata;
+      mejorDistancia = dist;
+      empatada = false;
+    } else if (dist === mejorDistancia && dist <= max) {
+      empatada = true;
+    }
+  }
+  // Solo se corrige si hay un único candidato claro.
+  return mejor !== null && !empatada ? mejor : palabra;
+}
+
+function corregirConsulta(pregunta: string, fichas: FichaTramite[]): string {
+  const vocab = vocabularioDe(fichas);
+  return normalize(pregunta)
+    .split(" ")
+    .map((p) => corregirPalabra(p, vocab))
+    .join(" ");
+}
+
 function scoreAlias(preguntaStems: Set<string>, alias: string): number {
   const aliasStems = new Set(tokensDe(alias).map(stem));
   if (aliasStems.size === 0) return 0;
@@ -164,17 +264,27 @@ function opcionesEmpate(puntajes: Puntaje[]): OpcionTramite[] {
     .map((p) => ({ id: p.ficha.id, tramite: p.ficha.tramite }));
 }
 
+function buscarNombreExacto(
+  preguntaNormalizada: string,
+  fichas: FichaTramite[]
+): FichaTramite | undefined {
+  return fichas.find((f) => normalize(f.tramite) === preguntaNormalizada);
+}
+
 export function matchTramiteDetalle(
   pregunta: string,
   fichas: FichaTramite[]
 ): ResultadoMatch {
-  const tokensPregunta = tokensDe(pregunta);
-  if (tokensPregunta.length === 0) return { ficha: null, motivo: "sin-match" };
+  if (tokensDe(pregunta).length === 0) return { ficha: null, motivo: "sin-match" };
 
-  const preguntaNormalizada = normalize(pregunta);
-  // Si la consulta es el nombre exacto de un trámite, ese gana.
-  const exacta = fichas.find((f) => normalize(f.tramite) === preguntaNormalizada);
+  // Si la consulta es el nombre exacto de un trámite, ese gana (antes y después
+  // de corregir la ortografía).
+  const exactaOriginal = buscarNombreExacto(normalize(pregunta), fichas);
+  if (exactaOriginal) return { ficha: exactaOriginal, motivo: "ok" };
+  const preguntaNormalizada = corregirConsulta(pregunta, fichas);
+  const exacta = buscarNombreExacto(preguntaNormalizada, fichas);
   if (exacta) return { ficha: exacta, motivo: "ok" };
+  const tokensPregunta = tokensDe(preguntaNormalizada);
   const clasePregunta = detectarClase(preguntaNormalizada);
   const intencionPrimera = tokensPregunta.some((t) =>
     /^(primer|nuev|compr)/.test(t)
