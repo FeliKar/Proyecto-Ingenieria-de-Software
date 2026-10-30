@@ -41,8 +41,12 @@ npm run dev
 
 | Parte | URL |
 |---|---|
-| Frontend (la app) | http://localhost:5173 |
+| Frontend (la app) | https://localhost:5173 |
 | Backend (API) | http://localhost:3001 |
+
+El frontend corre sobre **HTTPS con certificado autofirmado** (necesario para que el navegador permita el micrófono y la voz fuera de localhost). La primera vez el navegador muestra un aviso de seguridad: pulsa **"Avanzado" → "Continuar a localhost (no seguro)"**. Es esperado: es un certificado local.
+
+La app llama a la API en el mismo origen (`/api/...`) y Vite la reenvía al backend en el puerto 3001, así que no hay problemas de contenido mixto ni de CORS.
 
 Para comprobar que el backend levantó, abre http://localhost:3001/api/health: debe responder `{"status":"ok"}`.
 
@@ -61,10 +65,11 @@ Si el puerto 5173 está ocupado, Vite usa el siguiente libre (5174, 5175…) y l
    npm --prefix frontend run dev -- --host
    ```
 
-3. Vite muestra una línea `Network: http://192.168.x.x:5173`. Abre esa dirección en el navegador del celular.
-4. Si Windows pregunta por el firewall, permite el acceso en redes privadas.
+3. Vite muestra una línea `Network: https://192.168.x.x:5173`. Abre esa dirección en el navegador del celular.
+4. Acepta el aviso de certificado autofirmado: **"Avanzado" → "Continuar a 192.168.x.x (no seguro)"**. Sin eso, el navegador bloquea el micrófono.
+5. Si Windows pregunta por el firewall, permite el acceso en redes privadas.
 
-El frontend llama al backend en la misma dirección desde donde se abrió la página, así que no hay que configurar nada más.
+El celular solo necesita alcanzar el puerto 5173: las llamadas a la API viajan por el mismo puerto y Vite las reenvía al backend en el PC.
 
 ## Probar la app
 
@@ -78,6 +83,29 @@ En la app escribe, por ejemplo:
 | `beca municipal` | Ofrece las dos becas municipales como botones para elegir |
 | `Quiero inscribirme a un taller de guitarra` | Muestra el trámite del catálogo con "Ver información oficial" (sin requisitos inventados) |
 
+### Consulta por voz (modo accesibilidad)
+
+La página opera normalmente (solo texto) hasta que la persona activa el botón **"Modo accesibilidad"** (arriba a la derecha). Solo con ese modo activo aparece el micrófono y se leen las respuestas en voz alta; la preferencia se guarda en el navegador, así que la próxima visita ya está activa.
+
+Con el modo activado:
+
+1. Toca el botón circular del micrófono 🎤 y di, por ejemplo, "quiero saber para sacar mi primera licencia clase B".
+2. Al terminar, el asistente **lee en voz alta** lo que escuchó y ofrece botones grandes: **Buscar**, **Hablar otra vez** y **Escuchar de nuevo**.
+3. Al encontrar la ficha (o la abstención), la **lee completa en voz alta**. Hay botones "Escuchar de nuevo" y "Detener".
+4. Al desactivar el modo, se corta cualquier lectura y la página vuelve a operar solo con texto.
+
+Requiere Chrome o Microsoft Edge (usa la Web Speech API del navegador) y permiso de micrófono. En navegadores sin soporte, el micrófono se deshabilita con un aviso y el campo de texto sigue funcionando. Las consultas habladas suelen traer muletillas ("eh", "hola…"), que el backend ignora al buscar. Además, las letras dictadas se interpretan como la letra correspondiente: si el navegador escribe "be", "ve" o "ví", el asistente lo entiende como B o V (por ejemplo, "licencia tipo be renovar" encuentra lo mismo que "licencia tipo b renovar").
+
+### Si el micrófono dice que no puede conectarse
+
+El reconocimiento de voz del navegador se procesa en los servidores del propio navegador (Google en Chrome, Microsoft en Edge), no en este proyecto. Si aparece un error de conexión:
+
+1. **¿Estás en Chrome?** Prueba con **Microsoft Edge**: usa los servidores de voz de Microsoft y suele funcionar donde Chrome falla.
+2. **Extensiones bloqueadoras** (uBlock Origin, AdGuard, bloqueadores de DNS): añade `localhost` a la lista permitida o desactívalas en la página de la app. Abre DevTools (F12) → pestaña Network y revisa si aparece bloqueada una petición a `speech.googleapis.com`.
+3. **Red corporativa o proxy** que bloquee los servidores de voz del navegador.
+4. **¿La página no es https ni localhost?** El navegador bloquea el micrófono por seguridad; abre la dirección con https (ver "Abrir desde el celular").
+5. Mientras tanto, el **campo de texto siempre funciona**: al fallar la voz, el asistente lo resalta y pone el cursor ahí automáticamente.
+
 ## Pruebas
 
 Todas las pruebas (backend + frontend):
@@ -86,8 +114,9 @@ Todas las pruebas (backend + frontend):
 npm test
 ```
 
-- Backend: escenarios Gherkin de US-01, US-06 y US-09 con Cucumber (`backend/features/`), más `catalogo.feature` (catálogo de solo enlace, empate con opciones y tolerancia al 80%).
-- Frontend: tests del componente de resultado y de las opciones de desempate (`frontend/tests/`).
+- Backend: escenarios Gherkin de US-01, US-06 y US-09 con Cucumber (`backend/features/`), incluidos escenarios de consultas habladas con muletillas, más `catalogo.feature` (catálogo de solo enlace, empate con opciones y tolerancia al 80%).
+- Frontend: tests del componente de resultado, de las opciones de desempate, de los textos hablados, del formulario con micrófono y del botón de modo accesibilidad (`frontend/tests/`).
+
 
 Build del frontend:
 

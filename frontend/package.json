@@ -7,10 +7,11 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "test": "tsx --tsconfig tsconfig.test.json tests/tramiteResult.test.tsx && tsx --tsconfig tsconfig.test.json tests/abstentionMessage.test.tsx",
+    "test": "tsx --tsconfig tsconfig.test.json tests/tramiteResult.test.tsx && tsx --tsconfig tsconfig.test.json tests/voz.test.ts && tsx --tsconfig tsconfig.test.json tests/consultaForm.test.tsx && tsx --tsconfig tsconfig.test.json tests/botonModoAccesibilidad.test.tsx && tsx --tsconfig tsconfig.test.json tests/abstentionMessage.test.tsx",
     "preview": "vite preview"
   },
   "dependencies": {
+    "proyecto-ingenieria-de-software": "file:..",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },
@@ -18,6 +19,7 @@
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
+    "@vitejs/plugin-basic-ssl": "^2.3.0",
     "@vitejs/plugin-react": "^6.1.1",
     "oxlint": "^1.81.0",
     "tsx": "^4.23.15",

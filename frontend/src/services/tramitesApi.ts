@@ -1,8 +1,8 @@
 import type { ConsultaResponse } from "../types/tramite";
 
-
-// Se reemplaza localhost por el nombre o IP desde donde se abre la página, para permitir las pruebas desde un celular en la misma red durante la demo.
-const API_URL = `http://${window.location.hostname}:3001/api/tramites/consultar`;
+// Misma dirección que sirve la página (proxy de Vite hacia el backend en dev).
+// En producción el servidor estático debe configurar el mismo proxy de /api.
+const API_URL = "/api/tramites/consultar";
 
 export async function consultarTramite(
   pregunta: string,

@@ -11,9 +11,139 @@ body {
   padding: 2rem 1rem;
 }
 
+.app__cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* Botón de modo accesibilidad (micrófono + lectura en voz alta) */
+.modo-accesibilidad {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 64px;
+  padding: 0.75rem 1.25rem;
+  border: 2px solid #486581;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #243b53;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.modo-accesibilidad--activo {
+  background: #0b5fff;
+  border-color: #0b5fff;
+  color: #ffffff;
+}
+
 .subtitulo {
   color: #52606d;
   margin-top: -0.5rem;
+}
+
+/* Foco visible para navegación por teclado y lectores de pantalla */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: 3px solid #102a43;
+  outline-offset: 2px;
+}
+
+.buscador {
+  margin: 1.5rem 0;
+}
+
+.buscador__voz {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.buscador__voz-ayuda {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #334e68;
+}
+
+.buscador__estado {
+  margin: 0.75rem 0 0;
+  min-height: 1.5rem;
+}
+
+.buscador__transcripcion {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #334e68;
+  font-style: italic;
+}
+
+.buscador__sin-soporte {
+  margin: 0;
+  color: #7c2d12;
+  font-size: 1rem;
+}
+
+/* Botón de micrófono: 80px, circular, con ícono (no depende de leer texto) */
+.voz-boton {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  min-width: 80px;
+  border: none;
+  border-radius: 50%;
+  background: #0b5fff;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.voz-boton:disabled {
+  background: #9fb3c8;
+  cursor: not-allowed;
+}
+
+.voz-boton--escuchando {
+  background: #b91c1c;
+}
+
+.voz-boton__anillo {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 3px solid transparent;
+}
+
+.voz-boton--escuchando .voz-boton__anillo {
+  border-color: #fca5a5;
+  animation: pulso-mic 1.2s ease-out infinite;
+}
+
+@keyframes pulso-mic {
+  from {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  to {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voz-boton--escuchando .voz-boton__anillo {
+    animation: none;
+    border-color: #fecaca;
+  }
 }
 
 .consulta-form {
@@ -25,20 +155,109 @@ body {
 
 .consulta-form input {
   flex: 1 1 300px;
+  min-height: 64px;
   padding: 0.6rem 0.8rem;
   border: 1px solid #cbd2d9;
-  border-radius: 6px;
-  font-size: 1rem;
+  border-radius: 8px;
+  font-size: 1.15rem;
+}
+
+/* Resalta el campo de texto como salida cuando la voz falla */
+.consulta-form input.consulta-form__input--alerta {
+  border: 2px solid #b91c1c;
+  background: #fff5f5;
 }
 
 .consulta-form button {
-  padding: 0.6rem 1.2rem;
+  min-height: 64px;
+  padding: 0.6rem 1.5rem;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   background: #0b5fff;
   color: white;
-  font-size: 1rem;
+  font-size: 1.15rem;
+  font-weight: 600;
   cursor: pointer;
+}
+
+/* Confirmación de lo escuchado + botones grandes */
+.confirmacion-voz {
+  background: #eff6ff;
+  border: 2px solid #0b5fff;
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin: 1rem 0;
+}
+
+.confirmacion-voz__titulo {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #102a43;
+}
+
+.confirmacion-voz__texto {
+  margin: 0 0 1rem;
+  font-size: 1.25rem;
+  color: #334e68;
+}
+
+.confirmacion-voz__acciones {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.boton-grande {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 64px;
+  padding: 0.75rem 1.25rem;
+  border: none;
+  border-radius: 8px;
+  background: #486581;
+  color: white;
+  font-size: 1.2rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.boton-grande--primario {
+  background: #0b5fff;
+}
+
+.boton-grande:disabled {
+  background: #9fb3c8;
+  cursor: not-allowed;
+}
+
+/* Controles para volver a escuchar la respuesta */
+.lectura-controles {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.lectura-controles button {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 64px;
+  padding: 0.6rem 1.25rem;
+  border: none;
+  border-radius: 8px;
+  background: #0b5fff;
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.lectura-controles button:last-child {
+  background: #486581;
 }
 
 .consulta-form button:disabled {
@@ -78,12 +297,14 @@ body {
 }
 
 .opciones button {
-  padding: 0.6rem 1.2rem;
+  min-height: 64px;
+  padding: 0.75rem 1.25rem;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   background: #0b5fff;
   color: white;
-  font-size: 1rem;
+  font-size: 1.15rem;
+  font-weight: 600;
   cursor: pointer;
   text-align: left;
 }
