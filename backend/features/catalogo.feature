@@ -56,3 +56,24 @@ Característica: Catálogo de trámites con solo nombre y enlace oficial
       | Subsidios para compra de vivienda sin crédito para grupos emergentes                         |
       | Solicitud de licencias clase F                                                               |
       | Eximirse de Pago de Permiso de Circulación por no Circulación (Ley 18.440)                   |
+
+  Escenario: Solicitar una licencia clase F en lenguaje natural
+    Cuando consulto "Quiero solicitar una licencia clase F"
+    Entonces la respuesta es exitosa con el trámite "Solicitud de licencias clase F"
+    Y la respuesta es un trámite de solo enlace con el enlace oficial
+
+  Escenario: Renovar una licencia clase E entrega el trámite de esa clase
+    Cuando consulto "Quiero renovar licencia clase E"
+    Entonces la respuesta es exitosa con el trámite "Control o renovación de licencias clase E"
+
+  Escenario: Renovar una licencia clase A no responde con un trámite de otra clase
+    Cuando consulto "Quiero renovar mi licencia clase A"
+    Entonces el asistente se abstiene de responder
+    Y la respuesta ofrece 2 opciones de trámite
+    Y las opciones incluyen el trámite "Solicitud para control licencia clase A-1 Ley 18.290"
+    Y las opciones incluyen el trámite "Solicitud para control licencia clase A-2 Ley 18.290"
+
+  Escenario: Eximirse del permiso de circulación aparece entre las opciones
+    Cuando consulto "Necesito eximirme de pago de permiso de circulación"
+    Entonces el asistente se abstiene de responder
+    Y las opciones incluyen el trámite "Eximirse de Pago de Permiso de Circulación por no Circulación (Ley 18.440)"

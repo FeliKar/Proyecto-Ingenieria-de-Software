@@ -22,13 +22,15 @@ const STOP_WORDS = new Set([
 
 // Raíces para unificar variantes verbales/nominales
 function stem(token: string): string {
-  if (/^renuev/.test(token) || /^renov/.test(token)) return "renov";
+  if (/^renuev/.test(token) || /^renov/.test(token) || /^control/.test(token)) return "renov";
   if (/^vencid/.test(token) || /^venc/.test(token)) return "venc";
   if (/^adopc/.test(token) || /^adopt/.test(token)) return "adopcion";
   if (/^(sacar|saco|saca|sacas|sacarme|obtener|obtengo|obtencion|conseguir|consigo|comprar|compro|tramitar)$/.test(token))
     return "obtener";
   if (/^pago|pagas|pagar|pagarme$/.test(token)) return "pagar";
   if (/^conducir/.test(token)) return "conducir";
+  if (/^licencias?$/.test(token)) return "licencia";
+  if (/^clases?$/.test(token)) return "clase";
   return token;
 }
 
@@ -197,9 +199,14 @@ export function matchTramiteDetalle(
           .map((c) => c.trim())
           .includes(clasePregunta)
     );
+    // Si hay trámites de esa clase, los que no son de licencias no compiten.
+    const deLaClase = candidatas.filter((f) => f.clase !== undefined);
+    if (deLaClase.length > 0) candidatas = deLaClase;
   }
-  const hayPrimera = candidatas.some((f) => tipoFicha(f) === "primera");
-  const hayRenovacion = candidatas.some((f) => tipoFicha(f) === "renovacion");
+  // Solo las fichas completas vienen en pares primera vez / renovación.
+  const completas = candidatas.filter((f) => !f.solo_enlace);
+  const hayPrimera = completas.some((f) => tipoFicha(f) === "primera");
+  const hayRenovacion = completas.some((f) => tipoFicha(f) === "renovacion");
   if (intencionPrimera && !intencionRenovacion) {
     candidatas = candidatas.filter((f) => f.solo_enlace || tipoFicha(f) === "primera");
   } else if (intencionRenovacion && !intencionPrimera) {
@@ -211,7 +218,6 @@ export function matchTramiteDetalle(
     // La desambigüedad "primera vez vs renovación" solo aplica a las fichas
     // completas; las de solo enlace (catálogo) no forman parte de esa pregunta.
     const relacionadas = candidatas.filter((f) => {
-      if (f.solo_enlace) return false;
       let maxOverlap = 0;
       for (const alias of f.alias) {
         const aliasStems = new Set(tokensDe(alias).map(stem));
@@ -219,9 +225,13 @@ export function matchTramiteDetalle(
           .length;
         if (overlap > maxOverlap) maxOverlap = overlap;
       }
-      return maxOverlap >= 2;
+      // Un trámite del catálogo entra como opción solo si coincide con más
+      // palabras (p. ej. "eximirse de pago de permiso de circulación").
+      return maxOverlap >= (f.solo_enlace ? 3 : 2);
     });
-    if (relacionadas.length > 0) {
+    // Hay ambigüedad real solo si alguna ficha completa está relacionada; los
+    // trámites del catálogo se suman como opciones extra.
+    if (relacionadas.some((f) => !f.solo_enlace)) {
       return {
         ficha: null,
         motivo: "ambiguo",

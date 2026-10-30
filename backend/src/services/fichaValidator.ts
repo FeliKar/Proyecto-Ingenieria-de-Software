@@ -80,6 +80,15 @@ const EXCLUSIONES_CATALOGO = new Set([
   "https://tramites.penalolen.cl/Tramites/ver/renovacion-online-de-licencia-de-b---c---d---f",
 ]);
 
+// Clase de licencia según el nombre oficial ("licencia clase E", "licencia A-1").
+// Solo se usa para filtrar: no agrega información al trámite.
+function claseDesdeNombre(nombre: string): string | undefined {
+  const m = nombre
+    .toLowerCase()
+    .match(/licencias?\s+(?:clases?\s+)?["“”]?([a-f])(?:-\d)?["“”]?(?:\s|$)/);
+  return m ? m[1].toUpperCase() : undefined;
+}
+
 function idDesdeEnlace(enlace: string): string {
   const ultima = enlace.split(/[?#]/)[0].split("/").filter(Boolean).pop() ?? "";
   return ultima
@@ -149,6 +158,7 @@ export function cargarCatalogo(
       pasos: [],
       vigencia: "",
       enlace_oficial: url,
+      clase: claseDesdeNombre(nombre),
       solo_enlace: true,
     });
   });

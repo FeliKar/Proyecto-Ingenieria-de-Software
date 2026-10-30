@@ -51,3 +51,11 @@ Then(
     }
   }
 );
+
+Then("las opciones incluyen el trámite {string}", function (tramite: string) {
+  const opciones = (respuesta().body.opciones ?? []) as { tramite: string }[];
+  assert.ok(
+    opciones.some((o) => o.tramite === tramite),
+    `Las opciones no incluyen '${tramite}'`
+  );
+});
