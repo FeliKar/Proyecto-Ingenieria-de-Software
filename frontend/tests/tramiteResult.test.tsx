@@ -33,3 +33,38 @@ test("T18: sin enlace oficial no se renderiza un enlace alternativo", () => {
   assert.doesNotMatch(html, /<a[^>]*href=/);
   assert.doesNotMatch(html, /Ver información oficial/);
 });
+
+const fichaCatalogo: FichaTramite = {
+  id: "inscripcion-a-taller-de-guitarra",
+  tramite: "Inscripción a Taller de Guitarra",
+  requisitos: [],
+  pasos: [],
+  vigencia: "",
+  enlace_oficial:
+    "https://tramites.penalolen.cl/Tramites/ver/inscripcion-a-taller-de-guitarra",
+  solo_enlace: true,
+};
+
+test("Catálogo: una ficha de solo enlace no muestra listas ni datos vacíos", () => {
+  const html = renderToStaticMarkup(<TramiteResult ficha={fichaCatalogo} />);
+  assert.match(html, /Inscripción a Taller de Guitarra/);
+  assert.match(html, /sitio oficial del municipio/);
+  assert.doesNotMatch(html, /<h3>Requisitos<\/h3>/);
+  assert.doesNotMatch(html, /<h3>Pasos<\/h3>/);
+  assert.doesNotMatch(html, /<h3>Vigencia<\/h3>/);
+});
+
+test("Catálogo: la ficha de solo enlace mantiene el enlace oficial clicable", () => {
+  const html = renderToStaticMarkup(<TramiteResult ficha={fichaCatalogo} />);
+  assert.match(
+    html,
+    /<a[^>]*href="https:\/\/tramites\.penalolen\.cl\/Tramites\/ver\/inscripcion-a-taller-de-guitarra"/
+  );
+  assert.match(html, /Ver información oficial/);
+});
+
+test("Catálogo: una ficha de solo enlace nunca muestra secciones de requisitos", () => {
+  const html = renderToStaticMarkup(<TramiteResult ficha={fichaCatalogo} />);
+  assert.doesNotMatch(html, /<ul>/);
+  assert.doesNotMatch(html, /<ol>/);
+});

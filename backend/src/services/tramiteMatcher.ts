@@ -22,12 +22,15 @@ const STOP_WORDS = new Set([
 
 // Raíces para unificar variantes verbales/nominales
 function stem(token: string): string {
-  if (/^renuev/.test(token) || /^renov/.test(token)) return "renov";
+  if (/^renuev/.test(token) || /^renov/.test(token) || /^control/.test(token)) return "renov";
   if (/^vencid/.test(token) || /^venc/.test(token)) return "venc";
+  if (/^adopc/.test(token) || /^adopt/.test(token)) return "adopcion";
   if (/^(sacar|saco|saca|sacas|sacarme|obtener|obtengo|obtencion|conseguir|consigo|comprar|compro|tramitar)$/.test(token))
     return "obtener";
   if (/^pago|pagas|pagar|pagarme$/.test(token)) return "pagar";
   if (/^conducir/.test(token)) return "conducir";
+  if (/^licencias?$/.test(token)) return "licencia";
+  if (/^clases?$/.test(token)) return "clase";
   return token;
 }
 
@@ -35,6 +38,7 @@ function stem(token: string): string {
 const FORMAS_EXTRA = [
   "renuevo", "renuevas", "renueva", "renovando", "sacar", "saco", "sacas",
   "sacarme", "obtener", "obtengo", "conseguir", "tengo", "quiero",
+  "adoptar", "adopto",
 ];
 
 function tokensDe(texto: string): string[] {
@@ -74,9 +78,10 @@ function scoreAlias(preguntaStems: Set<string>, alias: string): number {
   return overlap / aliasStems.size;
 }
 
-// El reconocimiento de voz escribe las letras como suenan: "be" para la letra B,
-// "ví" para la letra V, etc. Se interpretan como la letra correspondiente para
-// que la búsqueda por voz dé los mismos resultados que la escrita.
+// Letras dictadas por voz que suenan como palabras: "be" para la letra B, "efe"
+// para la letra F, "ví" para la letra V, etc. Se interpretan como la letra
+// correspondiente para que la búsqueda por voz dé los mismos resultados que la
+// escrita.
 const LETRAS_DICTADAS: Record<string, string> = {
   be: "b",
   ve: "b",
@@ -124,9 +129,39 @@ export interface OpcionTramite {
 
 export interface ResultadoMatch {
   ficha: FichaTramite | null;
-  motivo: "ok" | "ambiguo" | "sin-match";
+  motivo: "ok" | "ambiguo" | "empate" | "sin-match";
   clase?: string;
   opciones?: OpcionTramite[];
+}
+
+// Nivel fuerte: al menos la mitad de las palabras del trámite cubiertas.
+const UMBRAL_FUERTE = 0.5;
+
+// Nivel recomendación: el usuario cubrió al menos el 80% de lo que dijo con
+// este trámite, aunque el trámite sea largo (nombres oficiales extensos).
+const UMBRAL_RECOMENDACION = 0.8;
+
+// Similitud mínima que debe tener una palabra no reconocida para que la consulta
+// siga buscando: por debajo se considera un tema ajeno a los trámites del
+// catálogo y se abstiene (US-09: no inventar).
+const UMBRAL_PALABRA_DESCONOCIDA = 0.5;
+
+// Tamaño máximo de la lista de opciones al haber empate.
+const TOPE_OPCIONES = 5;
+
+interface Puntaje {
+  ficha: FichaTramite;
+  score: number;
+  overlap: number;
+}
+
+// Varios trámites empatados en el primer lugar → se ofrecen como opciones.
+function opcionesEmpate(puntajes: Puntaje[]): OpcionTramite[] {
+  const mejor = puntajes[0].score;
+  return puntajes
+    .filter((p) => p.score === mejor)
+    .slice(0, TOPE_OPCIONES)
+    .map((p) => ({ id: p.ficha.id, tramite: p.ficha.tramite }));
 }
 
 export function matchTramiteDetalle(
@@ -137,6 +172,9 @@ export function matchTramiteDetalle(
   if (tokensPregunta.length === 0) return { ficha: null, motivo: "sin-match" };
 
   const preguntaNormalizada = normalize(pregunta);
+  // Si la consulta es el nombre exacto de un trámite, ese gana.
+  const exacta = fichas.find((f) => normalize(f.tramite) === preguntaNormalizada);
+  if (exacta) return { ficha: exacta, motivo: "ok" };
   const clasePregunta = detectarClase(preguntaNormalizada);
   const intencionPrimera = tokensPregunta.some((t) =>
     /^(primer|nuev|compr)/.test(t)
@@ -144,6 +182,10 @@ export function matchTramiteDetalle(
   const intencionRenovacion = tokensPregunta.some(
     (t) => stem(t) === "renov" || /^venc/.test(t)
   );
+  // Marca cuando la consulta llegó al caso "primera vez vs renovación" sin tratar
+  // realmente de eso (p. ej. una beca o un taller): entonces se continúa la
+  // búsqueda normal, pero con cuidado si contiene palabras desconocidas.
+  let consultaSinIntencion = false;
 
   // Filtrar candidatas por clase explícita y por intención (primera vs renovación)
   let candidatas = fichas;
@@ -157,17 +199,24 @@ export function matchTramiteDetalle(
           .map((c) => c.trim())
           .includes(clasePregunta)
     );
+    // Si hay trámites de esa clase, los que no son de licencias no compiten.
+    const deLaClase = candidatas.filter((f) => f.clase !== undefined);
+    if (deLaClase.length > 0) candidatas = deLaClase;
   }
-  const hayPrimera = candidatas.some((f) => tipoFicha(f) === "primera");
-  const hayRenovacion = candidatas.some((f) => tipoFicha(f) === "renovacion");
+  // Solo las fichas completas vienen en pares primera vez / renovación.
+  const completas = candidatas.filter((f) => !f.solo_enlace);
+  const hayPrimera = completas.some((f) => tipoFicha(f) === "primera");
+  const hayRenovacion = completas.some((f) => tipoFicha(f) === "renovacion");
   if (intencionPrimera && !intencionRenovacion) {
-    candidatas = candidatas.filter((f) => tipoFicha(f) === "primera");
+    candidatas = candidatas.filter((f) => f.solo_enlace || tipoFicha(f) === "primera");
   } else if (intencionRenovacion && !intencionPrimera) {
-    candidatas = candidatas.filter((f) => tipoFicha(f) === "renovacion");
+    candidatas = candidatas.filter((f) => f.solo_enlace || tipoFicha(f) === "renovacion");
   } else if (!intencionPrimera && !intencionRenovacion && hayPrimera && hayRenovacion) {
     // Sin intención explícita hay dos opciones (primera vez vs renovación).
     // Considerar solo las fichas con overlap real con la pregunta.
     const preguntaStemsTmp = new Set(tokensPregunta.map((t) => stem(t)));
+    // La desambigüedad "primera vez vs renovación" solo aplica a las fichas
+    // completas; las de solo enlace (catálogo) no forman parte de esa pregunta.
     const relacionadas = candidatas.filter((f) => {
       let maxOverlap = 0;
       for (const alias of f.alias) {
@@ -176,9 +225,13 @@ export function matchTramiteDetalle(
           .length;
         if (overlap > maxOverlap) maxOverlap = overlap;
       }
-      return maxOverlap >= 2;
+      // Un trámite del catálogo entra como opción solo si coincide con más
+      // palabras (p. ej. "eximirse de pago de permiso de circulación").
+      return maxOverlap >= (f.solo_enlace ? 3 : 2);
     });
-    if (relacionadas.length > 0) {
+    // Hay ambigüedad real solo si alguna ficha completa está relacionada; los
+    // trámites del catálogo se suman como opciones extra.
+    if (relacionadas.some((f) => !f.solo_enlace)) {
       return {
         ficha: null,
         motivo: "ambiguo",
@@ -186,7 +239,9 @@ export function matchTramiteDetalle(
         opciones: relacionadas.map((f) => ({ id: f.id, tramite: f.tramite })),
       };
     }
-    return { ficha: null, motivo: "sin-match" };
+    // No es una consulta de primera vez vs renovación: se continúa la búsqueda
+    // normal en todas las fichas (catálogo incluido).
+    consultaSinIntencion = true;
   }
   if (candidatas.length === 0) return { ficha: null, motivo: "sin-match" };
 
@@ -204,6 +259,10 @@ export function matchTramiteDetalle(
 
   // Autocorrección difusa: cada token se mapea a la palabra más cercana del vocabulario
   const preguntaStems = new Set<string>();
+  // Mejor similitud de las palabras que no se pudieron mapear (solo interesa si
+  // la consulta vino del caso "sin intención"): si una palabra es muy ajena al
+  // vocabulario de trámites, la consulta trata de otra cosa.
+  let similitudDesconocida = Number.POSITIVE_INFINITY;
   for (const token of tokensPregunta) {
     let mejor: string | null = null;
     let mejorScore = 0;
@@ -220,10 +279,21 @@ export function matchTramiteDetalle(
       if (!["quiero", "tengo", "necesito", "necesitan"].includes(s)) {
         preguntaStems.add(s);
       }
+    } else if (consultaSinIntencion) {
+      similitudDesconocida = Math.min(similitudDesconocida, mejorScore);
     }
   }
 
-  const puntajes = fichas
+  // Consulta sin intención clara con palabras ajenas a los trámites (p. ej.
+  // "perro", "impuesto") → se abstiene en vez de forzar una coincidencia (US-09).
+  if (
+    consultaSinIntencion &&
+    similitudDesconocida < UMBRAL_PALABRA_DESCONOCIDA
+  ) {
+    return { ficha: null, motivo: "sin-match" };
+  }
+
+  const puntajes: Puntaje[] = fichas
     .map((ficha) => {
       let best = 0;
       let bestOverlap = 0;
@@ -237,17 +307,40 @@ export function matchTramiteDetalle(
       }
       return { ficha, score: best, overlap: bestOverlap };
     })
-    .filter((p) => p.score >= 0.5 && p.overlap >= 2)
+    .filter((p) => p.overlap >= 2)
     .sort((a, b) => b.score - a.score);
 
-  if (puntajes.length === 0) return { ficha: null, motivo: "sin-match" };
-
-  // Empate → abstención
-  if (puntajes.length > 1 && puntajes[0].score === puntajes[1].score) {
-    return { ficha: null, motivo: "sin-match" };
+  // Nivel fuerte: coincide al menos la mitad de las palabras del trámite.
+  const fuertes = puntajes.filter((p) => p.score >= UMBRAL_FUERTE);
+  if (fuertes.length > 0) {
+    if (fuertes.length > 1 && fuertes[0].score === fuertes[1].score) {
+      return { ficha: null, motivo: "empate", opciones: opcionesEmpate(fuertes) };
+    }
+    return { ficha: fuertes[0].ficha, motivo: "ok" };
   }
 
-  return { ficha: puntajes[0].ficha, motivo: "ok" };
+  // Nivel recomendación: aunque la consulta use solo el 80% de sus palabras
+  // en un trámite extenso, se entrega la mejor opción (o varias si empatan).
+  if (preguntaStems.size >= 2) {
+    const recomendaciones = puntajes.filter(
+      (p) => p.overlap / preguntaStems.size >= UMBRAL_RECOMENDACION
+    );
+    if (recomendaciones.length > 0) {
+      if (
+        recomendaciones.length > 1 &&
+        recomendaciones[0].score === recomendaciones[1].score
+      ) {
+        return {
+          ficha: null,
+          motivo: "empate",
+          opciones: opcionesEmpate(recomendaciones),
+        };
+      }
+      return { ficha: recomendaciones[0].ficha, motivo: "ok" };
+    }
+  }
+
+  return { ficha: null, motivo: "sin-match" };
 }
 
 export function matchTramite(

@@ -1,8 +1,9 @@
 import { Router, Request, Response } from "express";
 import fichas from "../data/fichas.json";
+import catalogo from "../data/catalogo.json";
 import type { FichaTramite } from "../types/ficha";
 import { matchTramiteDetalle } from "../services/tramiteMatcher";
-import { cargarFichasValidas } from "../services/fichaValidator";
+import { cargarCatalogo, cargarFichasValidas } from "../services/fichaValidator";
 import {
   ABSTENCION_MENSAJE,
   CANAL_DERIVACION,
@@ -17,13 +18,33 @@ const fichasValidas: FichaTramite[] = cargarFichasValidas(
   fichas as FichaTramite[]
 );
 
+// Catálogo oficial: solo nombre y enlace (sin requisitos inventados). Los
+// duplicados de las fichas completas se descartan en la carga.
+const fichasCatalogo: FichaTramite[] = cargarCatalogo(catalogo, fichasValidas);
+
+// Todas las fichas consultables: completas (Sprint 1) + catálogo.
+const fichasDisponibles: FichaTramite[] = [...fichasValidas, ...fichasCatalogo];
+
+// Respuesta estándar de una ficha, marcando si es de solo enlace.
+function fichaEnRespuesta(ficha: FichaTramite) {
+  return {
+    id: ficha.id,
+    tramite: ficha.tramite,
+    requisitos: ficha.requisitos,
+    pasos: ficha.pasos,
+    vigencia: ficha.vigencia,
+    enlace_oficial: ficha.enlace_oficial,
+    ...(ficha.solo_enlace ? { solo_enlace: true } : {}),
+  };
+}
+
 router.post("/consultar", (req: Request, res: Response) => {
   try {
     const { pregunta, tramiteId } = req.body ?? {};
 
     // Elección explícita desde la consulta ambigua
     if (typeof tramiteId === "string" && tramiteId.trim().length > 0) {
-      const ficha = fichasValidas.find((f) => f.id === tramiteId);
+      const ficha = fichasDisponibles.find((f) => f.id === tramiteId);
       if (!ficha) {
         return res
           .status(404)
@@ -31,14 +52,7 @@ router.post("/consultar", (req: Request, res: Response) => {
       }
       return res.status(200).json({
         encontrado: true,
-        ficha: {
-          id: ficha.id,
-          tramite: ficha.tramite,
-          requisitos: ficha.requisitos,
-          pasos: ficha.pasos,
-          vigencia: ficha.vigencia,
-          enlace_oficial: ficha.enlace_oficial,
-        },
+        ficha: fichaEnRespuesta(ficha),
       });
     }
 
@@ -50,7 +64,7 @@ router.post("/consultar", (req: Request, res: Response) => {
 
     const { ficha, motivo, clase, opciones } = matchTramiteDetalle(
       pregunta,
-      fichasValidas
+      fichasDisponibles
     );
 
     if (!ficha) {
@@ -63,7 +77,9 @@ router.post("/consultar", (req: Request, res: Response) => {
             ? clase
               ? mensajeAmbiguoClase(clase)
               : "Encontré varios trámites que podrían ser lo que buscas. ¿Lo necesitas por primera vez o quieres renovar el trámite? Elige una de las opciones."
-            : ABSTENCION_MENSAJE,
+            : motivo === "empate"
+              ? "Encontré varios trámites que podrían ser el que buscas. Elige uno de ellos en la pantalla."
+              : ABSTENCION_MENSAJE,
         canal_derivacion: CANAL_DERIVACION,
         ...(opciones ? { opciones } : {}),
       });
@@ -71,14 +87,7 @@ router.post("/consultar", (req: Request, res: Response) => {
 
     return res.status(200).json({
       encontrado: true,
-      ficha: {
-        id: ficha.id,
-        tramite: ficha.tramite,
-        requisitos: ficha.requisitos,
-        pasos: ficha.pasos,
-        vigencia: ficha.vigencia,
-        enlace_oficial: ficha.enlace_oficial,
-      },
+      ficha: fichaEnRespuesta(ficha),
     });
   } catch (error) {
     console.error("Error inesperado:", error);

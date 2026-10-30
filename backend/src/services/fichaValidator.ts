@@ -64,3 +64,104 @@ export function cargarFichasValidas(
   }
   return validas;
 }
+
+// --- Catálogo de trámites (solo nombre + enlace oficial) -------------------
+
+export interface EntradaCatalogo {
+  tramite?: unknown;
+  enlace_oficial?: unknown;
+}
+
+/**
+ * Enlaces ya cubiertos por una ficha completa o que entrarían en conflicto con
+ * la desambigüedad del alcance del Sprint 1 (primera vez vs renovación).
+ */
+const EXCLUSIONES_CATALOGO = new Set([
+  "https://tramites.penalolen.cl/Tramites/ver/renovacion-online-de-licencia-de-b---c---d---f",
+]);
+
+// Clase de licencia según el nombre oficial ("licencia clase E", "licencia A-1").
+// Solo se usa para filtrar: no agrega información al trámite.
+function claseDesdeNombre(nombre: string): string | undefined {
+  const m = nombre
+    .toLowerCase()
+    .match(/licencias?\s+(?:clases?\s+)?["“”]?([a-f])(?:-\d)?["“”]?(?:\s|$)/);
+  return m ? m[1].toUpperCase() : undefined;
+}
+
+function idDesdeEnlace(enlace: string): string {
+  const ultima = enlace.split(/[?#]/)[0].split("/").filter(Boolean).pop() ?? "";
+  return ultima
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+/**
+ * Construye las fichas del catálogo oficial a partir de nombre y enlace.
+ *
+ * - Valida nombre y enlace https con el mismo criterio estricto de las fichas.
+ * - Omite los que repiten el enlace de una ficha completa (duplicados).
+ * - NO inventa requisitos, pasos ni vigencia: son fichas `solo_enlace`.
+ */
+export function cargarCatalogo(
+  registros: ReadonlyArray<EntradaCatalogo>,
+  existentes: ReadonlyArray<FichaTramite>
+): FichaTramite[] {
+  const urlsCubiertas = new Set(existentes.map((f) => f.enlace_oficial));
+  const idsVistos = new Set<string>();
+  const catalogo: FichaTramite[] = [];
+
+  registros.forEach((entrada, indice) => {
+    const etiqueta =
+      typeof entrada?.tramite === "string" && entrada.tramite.trim().length > 0
+        ? entrada.tramite.trim()
+        : `#${indice}`;
+
+    if (
+      typeof entrada?.tramite !== "string" ||
+      entrada.tramite.trim().length === 0
+    ) {
+      console.warn(`Catálogo: '${etiqueta}' descartado: nombre vacío.`);
+      return;
+    }
+    const nombre = entrada.tramite.trim();
+
+    if (!esEnlaceOficialValido(entrada.enlace_oficial)) {
+      console.warn(
+        `Catálogo: '${etiqueta}' descartado: enlace oficial ausente o inválido (debe comenzar con https://).`
+      );
+      return;
+    }
+    const url = entrada.enlace_oficial.trim();
+
+    if (EXCLUSIONES_CATALOGO.has(url) || urlsCubiertas.has(url)) {
+      console.warn(
+        `Catálogo: '${etiqueta}' descartado: su enlace ya está cubierto por una ficha existente.`
+      );
+      return;
+    }
+
+    const id = idDesdeEnlace(url);
+    if (id.length === 0 || idsVistos.has(id)) {
+      console.warn(`Catálogo: '${etiqueta}' descartado: id derivado vacío o duplicado.`);
+      return;
+    }
+
+    idsVistos.add(id);
+    urlsCubiertas.add(url);
+    catalogo.push({
+      id,
+      tramite: nombre,
+      alias: [nombre],
+      requisitos: [],
+      pasos: [],
+      vigencia: "",
+      enlace_oficial: url,
+      clase: claseDesdeNombre(nombre),
+      solo_enlace: true,
+    });
+  });
+
+  return catalogo;
+}
