@@ -77,7 +77,7 @@ export interface EntradaCatalogo {
  * la desambigüedad del alcance del Sprint 1 (primera vez vs renovación).
  */
 const EXCLUSIONES_CATALOGO = new Set([
-  "https://tramites.penalolen.cl/Tramites/ver/renovacion-online-de-licencia-de-b-c-d-f",
+  "https://tramites.penalolen.cl/Tramites/ver/renovacion-online-de-licencia-de-b---c---d---f",
 ]);
 
 function idDesdeEnlace(enlace: string): string {
