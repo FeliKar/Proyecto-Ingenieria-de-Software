@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "cucumber-js",
+    "test:unit": "node --import tsx --test tests/unit/fichaValidator.test.ts tests/unit/tramiteMatcher.test.ts tests/unit/abstention.test.ts",
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
     "test:estres": "node --import tsx tests/estres/consultar.estres.ts"
