@@ -77,3 +77,7 @@ Característica: Casos de borde de US-01, US-06 y US-09 (#62)
     Cuando consulto "licencia B y permiso de circulación"
     Entonces las opciones incluyen el trámite "Primera licencia clase B"
     Y las opciones incluyen el trámite "Obtención de permiso de circulación"
+
+  Escenario: Una consulta de más de 300 caracteres se rechaza sin buscar
+    Cuando consulto una pregunta de 301 caracteres
+    Entonces el servidor responde que la consulta es demasiado larga
