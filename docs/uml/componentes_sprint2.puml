@@ -1,0 +1,71 @@
+@startuml
+title Componentes · Sprint 2 (MuniChat)
+skinparam componentStyle uml2
+skinparam shadowing false
+skinparam defaultFontName Arial
+
+package "Navegador del vecino" {
+  package "frontend (React + TypeScript · Vite)" as FE {
+    [App] as App
+    [BotonModoAccesibilidad] as BMA
+    [ConsultaForm] as CF
+    [VozBoton] as VB
+    [ConfirmacionVoz] as CV
+    [TramiteResult] as TR
+    [AbstentionMessage] as AM
+    [useSpeechRecognition] as USR
+    [voz.ts\n(lectura y textos)] as VOZ
+    [tramitesApi] as API
+  }
+  interface "SpeechRecognition\n(Web Speech API)" as SR
+  interface "speechSynthesis\n(Web Speech API)" as SS
+  database "localStorage\nmodo accesibilidad" as LS
+}
+
+cloud "Servicio de voz del navegador\n(Google / Microsoft)" as NUBE
+
+package "backend (Node + Express + TypeScript)" as BE {
+  interface "POST /api/tramites/consultar" as REST
+  [TramitesRoutes] as R
+  [TramiteMatcher\n(autocorrección + fonética)] as M
+  [FichaValidator\ncargarFichasValidas · cargarCatalogo] as V
+  [abstention.ts\nmensaje + canal de derivación] as ABS
+  database "fichas.json\n(6 fichas completas)" as FJ
+  database "catalogo.json\n(158 trámites: nombre + enlace)" as CJ
+}
+
+database "Base de datos PraxSuite\n(US-15, en curso)" as DB #EEEEEE
+
+App --> BMA
+App --> CF
+CF --> VB
+App --> CV
+App --> TR
+App --> AM
+App --> USR
+App --> VOZ
+App --> API
+BMA ..> LS : guarda preferencia
+USR --> SR
+VOZ --> SS
+SR ..> NUBE : audio
+
+API --> REST : HTTPS/JSON\n(proxy de Vite)
+REST - R
+R --> M : matchTramiteDetalle()
+R --> V : valida al iniciar
+R --> ABS
+V --> FJ
+V --> CJ
+R ..> DB : <<planificado>>\nreemplaza los JSON
+
+note right of NUBE
+  MuniChat no recibe ni guarda audio:
+  al backend solo llega el texto (R9).
+end note
+
+note bottom of DB
+  US-15 no está integrada en main.
+  Hoy el backend lee los archivos JSON.
+end note
+@enduml

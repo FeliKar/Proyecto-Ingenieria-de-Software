@@ -1,0 +1,53 @@
+@startuml
+title Secuencia · caso de error: consulta sin cobertura y fallas (US-09, US-14, US-13)
+skinparam shadowing false
+skinparam defaultFontName Arial
+autonumber
+
+actor Vecino
+participant "App\n(React)" as App
+participant "useSpeechRecognition" as USR
+participant "tramitesApi" as API
+participant "TramitesRoutes\n(Express)" as R
+participant "TramiteMatcher" as M
+participant "abstention.ts" as ABS
+
+alt Consulta fuera de cobertura (CA14.3)
+  Vecino -> App : escribe "lisencia de perro"
+  App -> API : consultarTramite(pregunta)
+  API -> R : POST /api/tramites/consultar {pregunta}
+  R -> M : matchTramiteDetalle(pregunta, fichasDisponibles)
+  M --> R : {ficha: null, motivo: "sin-match"}
+  R -> ABS : ABSTENCION_MENSAJE, CANAL_DERIVACION
+  R --> API : 200 {encontrado: false, abstencion: true,\nmensaje, canal_derivacion}
+  API --> App : abstención
+  App --> Vecino : AbstentionMessage + "Ir al canal oficial"\n(sin ficha ni enlace inventado)
+
+else Pregunta vacía
+  note over Vecino, App : En la interfaz el botón Consultar queda deshabilitado sin texto.\nLa API igual se protege si recibe una pregunta vacía.
+  App -> API : consultarTramite("")
+  API -> R : POST /api/tramites/consultar {pregunta: ""}
+  R --> API : 400 {error: "pregunta debe ser un texto no vacío"}
+  API --> App : Error del servidor: 400
+  App --> Vecino : mensaje de error (estado "error")
+
+else Id de trámite inexistente
+  App -> API : consultarTramite("", tramiteId)
+  API -> R : POST /api/tramites/consultar {tramiteId}
+  R --> API : 404 {error: "No existe una ficha con ese id."}
+  API --> App : Error del servidor: 404
+  App --> Vecino : mensaje de error (estado "error");\nno se inventa una ficha
+
+else Falla la voz: sin habla o sin conexión (CA13.5)
+  Vecino -> App : toca el micrófono
+  App -> USR : iniciar()
+  USR --> App : error = mensajeErrorVoz("no-speech" | "network")
+  App --> Vecino : muestra el mensaje y deja el foco\nen el campo de texto, que sigue funcionando
+
+else Backend caído
+  App -> API : consultarTramite(pregunta)
+  API -x R : sin respuesta
+  API --> App : excepción
+  App --> Vecino : "No se pudo conectar con el servidor..."
+end
+@enduml
