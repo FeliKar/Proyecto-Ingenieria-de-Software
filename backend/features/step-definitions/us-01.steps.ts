@@ -111,3 +111,18 @@ Then("el servidor responde con un error de solicitud inválida", function () {
   assert.strictEqual(respuesta().status, 400);
   assert.ok(typeof respuesta().body.error === "string");
 });
+
+When(
+  "consulto una pregunta de {int} caracteres",
+  async function (largo: number) {
+    contexto.response = await request(app)
+      .post("/api/tramites/consultar")
+      .send({ pregunta: "licencia ".repeat(largo).slice(0, largo) });
+  }
+);
+
+Then("el servidor responde que la consulta es demasiado larga", function () {
+  assert.strictEqual(respuesta().status, 413);
+  assert.ok(typeof respuesta().body.error === "string");
+  assert.strictEqual(respuesta().body.ficha, undefined);
+});

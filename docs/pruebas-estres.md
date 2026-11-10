@@ -44,6 +44,23 @@ Los números cambian entre corridas. En una corrida anterior, el nivel 200 tuvo 
 
 ## Hallazgos (para otro ticket)
 
-1. **Consultas largas bloquean al resto.** Con solo 2 conexiones enviando preguntas de 20.000 caracteres (unas 2.700 palabras desconocidas), los usuarios normales bajaron de 352 a 3 consultas por segundo y su p99 subió de 75 ms a 8,3 s. Cada pregunta larga ocupa el servidor unos 5,5 s: la corrección ortográfica compara cada palabra con todo el vocabulario y después la búsqueda vuelve a comparar cada palabra con el vocabulario de los trámites candidatos. Una persona podría dejar la página casi sin servicio con muy pocas peticiones. Corrección sugerida: limitar el largo de la pregunta en la ruta (por ejemplo, 300 caracteres) y responder 400 si se pasa.
+1. **Consultas largas bloquean al resto** (resuelto en el Sprint 2, ver abajo y ADR-02). Con solo 2 conexiones enviando preguntas de 20.000 caracteres (unas 2.700 palabras desconocidas), los usuarios normales bajaron de 352 a 3 consultas por segundo y su p99 subió de 75 ms a 8,3 s. Cada pregunta larga ocupa el servidor unos 5,5 s: la corrección ortográfica compara cada palabra con todo el vocabulario y después la búsqueda vuelve a comparar cada palabra con el vocabulario de los trámites candidatos. Una persona podría dejar la página casi sin servicio con muy pocas peticiones. Corrección sugerida: limitar el largo de la pregunta en la ruta (por ejemplo, 300 caracteres) y responder 400 si se pasa.
 2. **No hay límite de peticiones por usuario** (rate limiting). Sumado a lo anterior, facilita saturar el servidor.
 3. **Un solo proceso.** El techo de ~360 consultas por segundo corresponde a un núcleo. Si algún día hiciera falta más, se podría correr un proceso por núcleo (por ejemplo, con el módulo `cluster` de Node o con varias instancias detrás de un balanceador).
+
+## Después del ADR-02 (límite de 300 caracteres)
+
+Se agregó el middleware `validarConsulta`, que responde 413 a las preguntas de más de 300 caracteres sin pasar por el buscador. Para comparar en igualdad de condiciones, las dos corridas se hicieron en el mismo equipo (un contenedor Linux, no el notebook de la tabla anterior), una justo después de la otra: antes sobre el commit sin el cambio y después con el cambio.
+
+| Escenario | Conexiones | Antes: Req/s | Antes: p99 (ms) | Después: Req/s | Después: p99 (ms) |
+|---|---|---|---|---|---|
+| Carga | 10 | 393 | 61 | 360 | 67 |
+| Carga | 50 | 415 | 282 | 389 | 314 |
+| Carga | 200 | 408 | 704 | 373 | 954 |
+| Carga | 500 | 379 | 3100 | 385 | 2721 |
+| Abuso: usuarios normales | 10 | **7** | **3605** | **383** | **55** |
+| Abuso: consultas largas | 2 | 1 | 5446 | 62 (todas 413) | 76 |
+
+- **Con el ataque de consultas largas, los usuarios normales pasan de 7 a 383 consultas por segundo y su p99 baja de 3,6 s a 55 ms.** Las consultas largas ahora se rechazan en milisegundos con 413.
+- La carga normal no cambia: las diferencias entre las dos corridas son variación entre ejecuciones.
+- El nivel de 200 conexiones sigue fuera de la meta de p99 < 500 ms en ambas corridas (riesgo R8). Eso depende del techo de un solo proceso, no del largo de la pregunta.
