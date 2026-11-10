@@ -1,0 +1,44 @@
+@startuml
+title Despliegue · Sprint 2 (MuniChat)
+skinparam shadowing false
+skinparam defaultFontName Arial
+
+node "Dispositivo del vecino\n(celular o PC)" as DISP {
+  node "Navegador\n(Edge / Chrome)" as NAV {
+    artifact "Bundle React\n(frontend MuniChat)" as BUNDLE
+    component "Web Speech API\nSpeechRecognition · speechSynthesis" as WSA
+    database "localStorage" as LS
+  }
+}
+
+cloud "Servicio de reconocimiento de voz\n(Google / Microsoft)" as VOZ
+
+node "PC del equipo (servidor de desarrollo)" as PC {
+  node "Proceso Vite :5173\n(npm run dev · HTTPS con certificado autofirmado)" as VITE {
+    artifact "frontend React (servidor de desarrollo)\n+ proxy /api" as STATIC
+  }
+  node "Proceso Node.js :3001\n(Express)" as NODE {
+    artifact "backend MuniChat\nPOST /api/tramites/consultar\nGET /api/health" as BACK
+    artifact "fichas.json" as FJ
+    artifact "catalogo.json" as CJ
+  }
+}
+
+node "PraxSuite" as PRX #EEEEEE {
+  database "Base de datos de trámites\n(US-15, en curso)" as DB
+}
+
+NAV --> VITE : HTTPS :5173\n(misma red WiFi, IP del PC)
+VITE --> NODE : proxy /api → http://localhost:3001
+WSA --> VOZ : HTTPS (audio del dictado)
+BACK ..> FJ : lee al iniciar
+BACK ..> CJ : lee al iniciar
+NODE ..> PRX : <<planificado>>\nconexión por variables de entorno
+
+note bottom of PC
+  El micrófono solo funciona en contexto seguro: por eso Vite usa HTTPS y el
+  celular solo necesita llegar al puerto 5173 (el 3001 queda interno).
+  Un solo nodo de servidor: dos procesos (frontend y backend) y dos JSON.
+  Sigue siendo un monolito cliente-servidor (ADR-01), no microservicios.
+end note
+@enduml

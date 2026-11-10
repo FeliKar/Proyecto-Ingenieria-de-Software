@@ -1,0 +1,48 @@
+@startuml
+title Secuencia · caso feliz: consulta por voz (US-13 + US-14)
+skinparam shadowing false
+skinparam defaultFontName Arial
+autonumber
+
+actor Vecino
+participant "App\n(React)" as App
+participant "useSpeechRecognition" as USR
+participant "SpeechRecognition\n(navegador)" as SR
+participant "voz.ts" as VOZ
+participant "tramitesApi" as API
+participant "TramitesRoutes\n(Express)" as R
+participant "TramiteMatcher" as M
+
+== Modo accesibilidad (CA13.1) ==
+Vecino -> App : activa "Modo accesibilidad"
+App -> App : guarda preferencia en localStorage
+
+== Dictado y confirmación (CA13.2, CA13.4) ==
+Vecino -> App : toca el micrófono
+App -> USR : iniciar()
+USR -> SR : start() · lang = es-CL
+Vecino -> SR : "eh, hola, quiero sacar mi primera licencia clase be"
+SR --> USR : onresult (isFinal)
+USR --> App : estado = "listo", transcripción
+App -> VOZ : leer(textoConfirmacion(transcripción))
+VOZ --> Vecino : repite en voz alta lo que entendió
+Vecino -> App : pulsa "Buscar"
+
+== Búsqueda tolerante a faltas (CA14.1, CA14.2) ==
+App -> API : consultarTramite(pregunta)
+API -> R : POST /api/tramites/consultar {pregunta}
+R -> M : matchTramiteDetalle(pregunta, fichasDisponibles)
+M -> M : normaliza (minúsculas, tildes), quita muletillas,\ninterpreta letras dictadas ("be" → B),\nautocorrige y compara por sonido
+M --> R : {ficha, motivo: "ok"}
+R --> API : 200 {encontrado: true, ficha}
+API --> App : ficha
+
+== Respuesta (CA13.3) ==
+App --> Vecino : TramiteResult: requisitos, pasos, vigencia\ny "Ver información oficial"
+App -> VOZ : leer(textoFicha(ficha))
+VOZ --> Vecino : lee la ficha completa en voz alta
+opt el vecino pulsa "Detener"
+  Vecino -> App : Detener
+  App -> VOZ : detenerLectura()
+end
+@enduml
