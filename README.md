@@ -52,6 +52,43 @@ Para comprobar que el backend levantó, abre http://localhost:3001/api/health: d
 
 Si el puerto 5173 está ocupado, Vite usa el siguiente libre (5174, 5175…) y lo muestra en la terminal.
 
+## Fuente de datos: Praxsuite (opcional)
+
+El backend puede leer los trámites desde la base **MuniChatIA** en Praxsuite. Si
+no hay credenciales configuradas, usa los JSON de `backend/src/data` como
+respaldo, así que el desarrollo y las pruebas funcionan sin red.
+
+Orden de preferencia:
+
+1. **Praxsuite** (`https://gateway.praxsuite.com/<workspace>`), si hay API key.
+2. **JSON locales** (`fichas.json` + `catalogo.json`), en cualquier otro caso.
+
+Configuración en `backend/.env` (ver `backend/.env.example`):
+
+| Variable | Descripción |
+|---|---|
+| `PRAXSUITE_API_KEY` | Server API key `sk_live_…`. |
+| `PRAXSUITE_API_KEY_FILE` | Ruta a un archivo con la key (alternativa a la anterior). |
+| `PRAXSUITE_GATEWAY_URL` | Base del gateway. Por defecto, el workspace MuniChatIA. |
+| `PRAXSUITE_TABLE_TRAMITES` | UUID de la tabla `Tramites`. |
+| `PRAXSUITE_TABLE_CLASES` | UUID de la tabla `Clases`. |
+| `PRAXSUITE_TABLE_ALIAS` | UUID de la tabla `Alias`. |
+| `PRAXSUITE_TABLE_TRAMITE_CLASE` | UUID de la tabla `TramiteClase`. |
+| `PRAXSUITE_TABLE_REQUISITOS` | UUID de la tabla `Requisitos`. |
+| `PRAXSUITE_TABLE_PASOS` | UUID de la tabla `Pasos`. |
+| `PRAXSUITE_CACHE_TTL_MS` | Vigencia de la caché en memoria (5 min por defecto). |
+| `PRAXSUITE_DISABLED` | `1` fuerza el uso de los JSON locales. |
+
+Para comprobar qué fuente está activa:
+
+```bash
+curl http://localhost:3001/api/tramites/estado
+# {"origen":"praxsuite","total":158,"fichas":6,"catalogo":152}
+```
+
+La suite de Cucumber fija `PRAXSUITE_DISABLED=1`, de modo que nunca depende del
+gateway ni de credenciales.
+
 ## Abrir desde el celular
 
 1. Conecta el celular a la misma red WiFi que el PC.
@@ -126,7 +163,7 @@ npm run build --prefix frontend
 
 ## Qué es real y qué es fake
 
-- **Datos:** las fichas de `backend/src/data/fichas.json` son sintéticas. No se usan las 850 preguntas oficiales del municipio ni datos personales.
+- **Datos:** las fichas de `backend/src/data/fichas.json` son sintéticas. No se usan las 850 preguntas oficiales del municipio ni datos personales. La base de Praxsuite replica esas mismas fichas y el catálogo: no agrega información inventada.
 - **Catálogo:** `backend/src/data/catalogo.json` lista los trámites oficiales **solo con nombre y enlace**; jamás se inventan requisitos, pasos ni vigencia (US-09 / `docs/adr-01.md`). Los duplicados de enlaces del Sprint 1 se excluyen al cargar.
 - **Validación:** al iniciar, el backend descarta las fichas incompletas o sin enlace oficial https (`backend/src/services/fichaValidator.ts`).
 - **Sin API municipal:** no hay conexión con sistemas de la Municipalidad.
