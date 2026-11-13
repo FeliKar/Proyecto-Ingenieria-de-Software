@@ -9,6 +9,10 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [react(), basicSsl()],
   server: {
+    // Escucha en todas las interfaces (IPv4 e IPv6) y en la red local. Sin esto
+    // Vite queda solo en [::1] y algunos navegadores fallan con "conexión
+    // rechazada" al resolver localhost como 127.0.0.1.
+    host: true,
     // La API se sirve en el mismo origen (https://<host>:5173/api/...) y Vite la
     // reenvía al backend. Así se evita contenido mixto (página https + fetch http)
     // y el celular no necesita alcanzar el puerto 3001.

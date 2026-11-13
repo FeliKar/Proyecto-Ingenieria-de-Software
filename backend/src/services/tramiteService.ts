@@ -3,6 +3,7 @@ import catalogo from "../data/catalogo.json";
 import type { FichaTramite } from "../types/ficha";
 import { matchTramiteDetalle } from "./tramiteMatcher";
 import { cargarCatalogo, cargarFichasValidas } from "./fichaValidator";
+import { obtenerFichas } from "./tramitesRepository";
 import {
   ABSTENCION_MENSAJE,
   CANAL_DERIVACION,
@@ -39,6 +40,14 @@ export class TramiteService {
     const fichasValidas = cargarFichasValidas(fichas as FichaTramite[]);
     const fichasCatalogo = cargarCatalogo(catalogo, fichasValidas);
     return new TramiteService([...fichasValidas, ...fichasCatalogo]);
+  }
+
+  /**
+   * Fuente configurada: Praxsuite si hay credenciales y responde; si no, el
+   * respaldo de los JSON locales. El repositorio cachea el resultado.
+   */
+  static async desdeFuente(): Promise<TramiteService> {
+    return new TramiteService(await obtenerFichas());
   }
 
   buscarPorId(id: string) {
