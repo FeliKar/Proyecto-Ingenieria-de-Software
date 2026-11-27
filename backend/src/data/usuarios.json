@@ -1,0 +1,9 @@
+[
+  {
+    "id": "funcionario-demo",
+    "email": "funcionario.demo@munichat.cl",
+    "nombre": "Funcionario Demo",
+    "hash": "scrypt$16384$Ud3d18vx4NLk3Lg6ZvAq1A==$jJqe2hN5Akcsq7A7Hg5kT+9EmUdQQMCGbcumrQ6CZo5EbsRuqv7xVO455Dzonq9IEYDK5F6TT5TsgFSMcK+mlg==",
+    "rol": "funcionario"
+  }
+]

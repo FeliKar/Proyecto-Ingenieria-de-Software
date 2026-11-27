@@ -5,9 +5,10 @@ import type { Response } from "supertest";
  *
  * Cada archivo `.steps.ts` vive en su propio módulo, por lo que la respuesta
  * HTTP de `POST /api/tramites/consultar` se guarda aquí para poder afirmar
- * sobre ella desde cualquier historia (US-01, US-06, US-09...).
+ * sobre ella desde cualquier historia (US-01, US-06, US-09...) y el token de
+ * sesión del funcionario para las historias del panel (US-05).
  */
-export const contexto: { response?: Response } = {};
+export const contexto: { response?: Response; token?: string } = {};
 
 export function respuesta(): Response {
   if (!contexto.response) {
@@ -16,4 +17,13 @@ export function respuesta(): Response {
     );
   }
   return contexto.response;
+}
+
+export function token(): string {
+  if (!contexto.token) {
+    throw new Error(
+      "No hay token: falta el paso 'Dado que inicié sesión como funcionario'."
+    );
+  }
+  return contexto.token;
 }

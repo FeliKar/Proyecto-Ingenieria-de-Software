@@ -1,0 +1,42 @@
+@startuml
+title Secuencia · funcionario inicia sesión y actualiza una ficha (US-05 + ADR-04)
+skinparam shadowing false
+skinparam defaultFontName Arial
+
+actor Funcionario
+participant "LoginPage" as LP
+participant "PanelPage" as PP
+participant "auth.routes" as AR
+participant "usuariosRepository" as UR
+participant "panel.routes" as PR
+participant "panelService" as PS
+database "fuente activa\n(JSON o Praxsuite)" as DB
+participant "tramitesRepository" as TR
+
+Funcionario -> LP : correo + contraseña
+LP -> AR : POST /api/auth/login
+AR -> UR : buscarUsuarioPorEmail()
+UR --> AR : usuario con hash scrypt
+AR -> AR : verificarPassword() + límite de intentos
+AR --> LP : 200 { token JWT }
+LP -> PP : guarda el token y abre el panel
+
+PP -> PR : GET /api/panel/tramites\n(Bearer)
+PR -> PS : listarFichas()
+PS -> TR : obtenerFichas()
+TR --> PS : fichas (caché)
+PS --> PP : lista completa
+
+Funcionario -> PP : edita una ficha y guarda
+PP -> PR : PUT /api/panel/tramites/:id\n(Bearer)
+PR -> MW : requiereSesion() → JWT válido
+PR -> PS : actualizarFicha(id, entrada)
+PS -> PS : motivoFichaInvalida()\n(US-09: exige enlace https)
+PS -> DB : guardar en la fuente activa
+PS -> TR : invalidarCache()
+
+Funcionario -> PP : consulta el asistente en otra pestaña
+PP -> TR : POST /api/tramites/consultar (sin token)
+TR -> DB : recarga tras invalidar la caché
+TR --> Funcionario : ficha actualizada
+@enduml

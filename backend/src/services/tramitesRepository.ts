@@ -1,11 +1,10 @@
 import { praxsuite } from "../config";
-import fichasJson from "../data/fichas.json";
-import catalogoJson from "../data/catalogo.json";
 import type { FichaTramite } from "../types/ficha";
 import {
   cargarCatalogo,
   cargarFichasValidas,
 } from "./fichaValidator";
+import { leerCatalogo, leerFichasCompletas } from "./fichasLocalStore";
 
 /**
  * Fuente de trámites.
@@ -22,11 +21,15 @@ export type OrigenFichas = "praxsuite" | "json";
 
 type Fila = Record<string, unknown>;
 
-const fichasValidas = cargarFichasValidas(fichasJson as FichaTramite[]);
-const fichasLocales: FichaTramite[] = [
-  ...fichasValidas,
-  ...cargarCatalogo(catalogoJson, fichasValidas),
-];
+/**
+ * Fichas del respaldo local: se leen de disco en cada recarga para que un
+ * cambio hecho desde el panel del funcionario se refleje en la consulta del
+ * vecino sin reiniciar el servidor.
+ */
+function fichasLocales(): FichaTramite[] {
+  const completas = cargarFichasValidas(leerFichasCompletas());
+  return [...completas, ...cargarCatalogo(leerCatalogo(), completas)];
+}
 
 // ----------------------------- utilidades ----------------------------------
 
@@ -78,7 +81,7 @@ function orden(valor: unknown): number {
 
 // ------------------------------ Praxsuite -----------------------------------
 
-async function consultarTabla(
+export async function consultarTabla(
   tableId: string,
   select: string[]
 ): Promise<Fila[]> {
@@ -292,7 +295,7 @@ let enCurso: Promise<Cache> | null = null;
 
 async function resolver(): Promise<Cache> {
   if (!praxsuite.habilitado) {
-    return { at: Date.now(), fichas: fichasLocales, origen: "json" };
+    return { at: Date.now(), fichas: fichasLocales(), origen: "json" };
   }
 
   try {
@@ -304,8 +307,22 @@ async function resolver(): Promise<Cache> {
         error instanceof Error ? error.message : String(error)
       }`
     );
-    return { at: Date.now(), fichas: fichasLocales, origen: "json" };
+    return { at: Date.now(), fichas: fichasLocales(), origen: "json" };
   }
+}
+
+/**
+ * Borra la caché para que la próxima consulta vuelva a leer la fuente. Lo usa
+ * el panel después de cada escritura, de modo que el cambio del funcionario
+ * se vea en la consulta del vecino en el mismo segundo.
+ */
+export function invalidarCache(): void {
+  cache = null;
+}
+
+/** Fuente que está respondiendo ahora. Llamar después de `obtenerFichas()`. */
+export function origenActivo(): OrigenFichas {
+  return cache?.origen ?? "json";
 }
 
 /**

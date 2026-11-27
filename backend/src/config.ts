@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
+import { randomBytes } from "node:crypto";
 import { homedir } from "node:os";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -95,4 +96,44 @@ export const praxsuite = {
   get habilitado(): boolean {
     return this.apiKey.length > 0 && this.gatewayUrl.length > 0;
   },
+};
+
+// ---------------------------------------------------------------------------
+// Panel de funcionarios (US-05): los vecinos no inician sesión.
+// ---------------------------------------------------------------------------
+
+/**
+ * Secreto para firmar los JWT.
+ *
+ * Si `JWT_SECRET` no está definido se genera uno efímero: el servidor arranca
+ * igual (sin secretos en el repositorio) pero las sesiones se cierran al
+ * reiniciar. En producción siempre hay que definirlo en `backend/.env`.
+ */
+const secretoEfímero = randomBytes(32).toString("base64url");
+
+export const panel = {
+  /** Vigencia de la sesión del funcionario (por defecto, una jornada laboral). */
+  ttlMinutos: numero(process.env.PANEL_TOKEN_TTL_MINUTOS, 8 * 60),
+  secreto: process.env.JWT_SECRET?.trim() || secretoEfímero,
+  secretoEfímero: !process.env.JWT_SECRET?.trim(),
+  /** Intentos fallidos de login permitidos antes de bloquear (ventana fija). */
+  intentosMaximos: numero(process.env.PANEL_INTENTOS_MAXIMOS, 5),
+  ventanaIntentosMs: numero(process.env.PANEL_VENTANA_INTENTOS_MS, 15 * 60 * 1000),
+  /** Rutas de los archivos locales (sobrescribibles para los tests). */
+  fichasJson: process.env.FICHAS_JSON_RUTA?.trim() || resolve(aqui, "./data/fichas.json"),
+  catalogoJson: process.env.CATALOGO_JSON_RUTA?.trim() || resolve(aqui, "./data/catalogo.json"),
+  usuariosJson: process.env.USUARIOS_JSON_RUTA?.trim() || resolve(aqui, "./data/usuarios.json"),
+};
+
+if (panel.secretoEfímero) {
+  console.warn(
+    "JWT_SECRET no está definido: se usa un secreto temporal y las sesiones " +
+      "del panel se cerrarán al reiniciar el servidor."
+  );
+}
+
+export const usuarios = {
+  /** Tabla de funcionarios en Praxsuite (solo lectura de usuarios: login). */
+  tabla:
+    process.env.PRAXSUITE_TABLE_USUARIOS?.trim() || "Usuarios",
 };

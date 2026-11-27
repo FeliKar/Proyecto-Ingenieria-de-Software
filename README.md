@@ -89,6 +89,51 @@ curl http://localhost:3001/api/tramites/estado
 La suite de Cucumber fija `PRAXSUITE_DISABLED=1`, de modo que nunca depende del
 gateway ni de credenciales.
 
+## Panel de funcionarios (US-05)
+
+Los **vecinos nunca inician sesión**: el asistente sigue siendo anónimo. La
+sesión es solo para el funcionario que actualiza el catálogo.
+
+1. Abre <https://localhost:5173/panel> (en el chat hay un botón "Panel de
+   funcionarios").
+2. Inicia sesión con el usuario de prueba:
+
+   | Campo | Valor |
+   |---|---|
+   | Correo | `funcionario.demo@munichat.cl` |
+   | Contraseña | `Panel-Demo-2026` |
+
+   Son los usuarios de `backend/src/data/usuarios.json`, que se usan cuando
+   **no** hay API key de Praxsuite. Con Praxsuite configurado, los funcionarios
+   salen de la tabla `Usuarios` del workspace (`PRAXSUITE_TABLE_USUARIOS`).
+
+3. Desde el panel puedes **crear, editar y eliminar** trámites. Todo lo que
+   guardes aparece en la consulta del vecino en el momento.
+
+Reglas que el panel respeta (igual que la carga de datos):
+
+- Ninguna ficha se guarda sin enlace oficial `https://` (US-09).
+- Un trámite del **catálogo** solo tiene nombre y enlace: la API rechaza
+  requisitos, pasos o vigencia inventados.
+- Una ficha incompleta (sin requisitos, pasos o vigencia) se rechaza con un
+  mensaje en lenguaje simple.
+
+API (todas menos `/api/auth/login` exigen `Authorization: Bearer <token>`):
+
+| Método | Ruta | Qué hace |
+|---|---|---|
+| POST | `/api/auth/login` | usuario y contraseña → JWT |
+| GET | `/api/auth/me` | quién tiene la sesión |
+| GET | `/api/panel/tramites` | lista completa para editar |
+| POST | `/api/panel/tramites` | crear un trámite |
+| PUT | `/api/panel/tramites/:id` | editar un trámite |
+| DELETE | `/api/panel/tramites/:id` | eliminar un trámite |
+
+Si `JWT_SECRET` no está definido, el servidor genera uno temporal y las sesiones
+se cierran al reiniciar: en producción va en `backend/.env` (ver
+`backend/.env.example`). El límite de intentos fallidos de login es de 5 por
+correo e IP cada 15 minutos.
+
 ## Abrir desde el celular
 
 1. Conecta el celular a la misma red WiFi que el PC.
@@ -151,8 +196,9 @@ Todas las pruebas (backend + frontend):
 npm test
 ```
 
-- Backend: escenarios Gherkin de US-01, US-06 y US-09 con Cucumber (`backend/features/`), incluidos escenarios de consultas habladas con muletillas, más `catalogo.feature` (catálogo de solo enlace, empate con opciones y tolerancia al 80%).
-- Frontend: tests del componente de resultado, de las opciones de desempate, de los textos hablados, del formulario con micrófono y del botón de modo accesibilidad (`frontend/tests/`).
+- Backend: escenarios Gherkin de US-01, US-06 y US-09 con Cucumber (`backend/features/`), incluidos escenarios de consultas habladas con muletillas, más `catalogo.feature` (catálogo de solo enlace, empate con opciones y tolerancia al 80%), `auth.feature` (sesión del funcionario) y `panel.feature` (alta, edición y baja de trámites).
+- Backend unitarias: `npm --prefix backend run test:unit` (validación, matching, contraseñas, JWT y panel sobre archivos temporales).
+- Frontend: tests del componente de resultado, de las opciones de desempate, de los textos hablados, del formulario con micrófono, del botón de modo accesibilidad, del login y del editor del panel (`frontend/tests/`).
 
 
 Build del frontend:
