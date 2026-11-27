@@ -273,6 +273,18 @@ input:focus-visible {
   padding: 1.25rem;
 }
 
+/* Call center: teléfono + web en la derivación */
+.abstention-message__canales {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+}
+
+.abstention-message__telefono {
+  font-weight: 600;
+}
+
 /* Fichas del catálogo: solo nombre y enlace oficial, sin datos inventados */
 .tramite-result .solo-enlace-aviso {
   background: #f0f6ff;

@@ -34,6 +34,21 @@ Then("el asistente no encuentra el trámite", function () {
 });
 
 Then(
+  "el canal de derivación incluye teléfono {string} y sitio web",
+  function (telefono: string) {
+    const canal = respuesta().body.canal_derivacion as
+      | { telefono?: string; url?: string }
+      | undefined;
+    assert.ok(canal, "Debe entregarse un canal de derivación");
+    assert.strictEqual(canal.telefono, telefono);
+    assert.ok(
+      canal.url?.startsWith("https://"),
+      "El sitio web del canal debe ser https"
+    );
+  }
+);
+
+Then(
   "el asistente ofrece opciones para elegir con motivo {string}",
   function (motivo: string) {
     const body = respuesta().body;

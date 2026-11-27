@@ -133,7 +133,17 @@ if (panel.secretoEfímero) {
 }
 
 export const usuarios = {
-  /** Tabla de funcionarios en Praxsuite (solo lectura de usuarios: login). */
+  /** Tabla de funcionarios en Praxsuite (lectura de login y escritura de rol). */
   tabla:
     process.env.PRAXSUITE_TABLE_USUARIOS?.trim() || "Usuarios",
+};
+
+// ---------------------------------------------------------------------------
+// Call center: se muestra junto al enlace web cuando el asistente se abstiene.
+// ---------------------------------------------------------------------------
+
+/** Teléfono de atención de la Municipalidad de Peñalolén (fuente penalolen.cl). */
+export const callCenter = {
+  telefono:
+    process.env.CALL_CENTER_TELEFONO?.trim() || "+56 2 2486 8000",
 };

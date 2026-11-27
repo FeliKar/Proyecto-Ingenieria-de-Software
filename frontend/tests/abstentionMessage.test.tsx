@@ -1,13 +1,16 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { renderToStaticMarkup } from "react-dom/server";
-import AbstentionMessage from "../src/components/AbstentionMessage";
+import AbstentionMessage, {
+  telefonoHref,
+} from "../src/components/AbstentionMessage";
 import type { CanalDerivacion } from "../src/types/tramite";
 
 const canal: CanalDerivacion = {
   nombre: "Municipalidad de Peñalolén",
   descripcion: "Módulos de atención presencial.",
   url: "https://www.penalolen.cl/",
+  telefono: "+56 2 2486 8000",
 };
 
 const opcionesEmpate = [
@@ -44,4 +47,29 @@ test("Sin opciones no se muestran botones de elección", () => {
   assert.doesNotMatch(html, /<button/);
   assert.match(html, /No cuento con información suficiente/);
   assert.match(html, /Ir al canal oficial/);
+});
+
+test("La abstención muestra el call center como enlace tel:", () => {
+  const html = renderToStaticMarkup(
+    <AbstentionMessage mensaje="Te derivo al canal oficial." canal={canal} />
+  );
+  assert.match(html, /href="tel:\+56224868000"/);
+  assert.match(html, /Llamar al \+56 2 2486 8000/);
+  assert.match(html, /https:\/\/www\.penalolen\.cl\//);
+});
+
+test("Sin teléfono configurado solo se muestra el canal web", () => {
+  const html = renderToStaticMarkup(
+    <AbstentionMessage
+      mensaje="Te derivo al canal oficial."
+      canal={{ ...canal, telefono: undefined }}
+    />
+  );
+  assert.doesNotMatch(html, /tel:/);
+  assert.match(html, /Ir al canal oficial/);
+});
+
+test("telefonoHref deja solo el prefijo + y los dígitos", () => {
+  assert.strictEqual(telefonoHref("+56 2 2486 8000"), "tel:+56224868000");
+  assert.strictEqual(telefonoHref("+56-2-2486-8000"), "tel:+56224868000");
 });

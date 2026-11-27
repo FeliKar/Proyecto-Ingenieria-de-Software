@@ -15,6 +15,8 @@ export interface CanalDerivacion {
   nombre: string;
   descripcion: string;
   url: string;
+  // Teléfono del call center municipal (opcional para respuestas antiguas).
+  telefono?: string;
 }
 
 export interface ConsultaSuccess {

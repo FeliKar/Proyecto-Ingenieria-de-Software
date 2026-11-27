@@ -27,4 +27,8 @@ describe("CANAL_DERIVACION", () => {
   it("apunta a un sitio oficial https", () => {
     assert.ok(CANAL_DERIVACION.url.startsWith("https://"));
   });
+
+  it("incluye el call center municipal para derivar también por teléfono", () => {
+    assert.strictEqual(CANAL_DERIVACION.telefono, "+56 2 2486 8000");
+  });
 });
