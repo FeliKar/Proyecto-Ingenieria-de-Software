@@ -5,8 +5,11 @@ export interface UsuarioPanel {
   id: string;
   nombre: string;
   email: string;
-  rol: string;
+  rol: Rol;
 }
+
+/** Roles del panel (ADR-05): admin gestiona, funcionario solo edita. */
+export type Rol = "admin" | "funcionario";
 
 /** Ficha tal como la lista el panel: incluye el tipo y los alias. */
 export interface FichaPanel extends FichaTramite {

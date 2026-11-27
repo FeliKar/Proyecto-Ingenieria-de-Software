@@ -45,3 +45,30 @@ export async function requiereSesion(
   req.sesion = sesion;
   next();
 }
+
+/**
+ * Exige una sesión válida con uno de los roles indicados (ADR-05).
+ *
+ * Sin sesión responde 401; con sesión pero sin el rol, 403. Se aplica en las
+ * rutas que solo un `admin` puede usar (borrar trámites y administrar
+ * usuarios): crear y editar trámites sigue siendo de cualquier funcionario.
+ */
+export function requiereRol(...roles: string[]) {
+  return async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    await requiereSesion(req, res, () => {
+      const rol = req.sesion?.rol;
+      if (!rol || !roles.includes(rol)) {
+        res.status(403).json({
+          error:
+            "Tu rol no tiene permiso para esta acción. Pide a un administrador que te asigne el rol admin.",
+        });
+        return;
+      }
+      next();
+    });
+  };
+}

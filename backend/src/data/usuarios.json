@@ -3,7 +3,14 @@
     "id": "funcionario-demo",
     "email": "funcionario.demo@munichat.cl",
     "nombre": "Funcionario Demo",
-    "hash": "scrypt$16384$Ud3d18vx4NLk3Lg6ZvAq1A==$jJqe2hN5Akcsq7A7Hg5kT+9EmUdQQMCGbcumrQ6CZo5EbsRuqv7xVO455Dzonq9IEYDK5F6TT5TsgFSMcK+mlg==",
+    "hash": "scrypt$16384$IE0eOBZnpCucWl7Fz/0New==$LX5lw5AjroJHuk+/pkodQr7xaTgsDsES5A8tvaj2GNb7QHC6KEwcHqBjuKNzMaYbrQoztoItTOwXfs4O8QACiA==",
+    "rol": "admin"
+  },
+  {
+    "id": "editor-demo",
+    "email": "editor.demo@munichat.cl",
+    "nombre": "Editor Demo",
+    "hash": "scrypt$16384$N6n0ynG669bYgjLhvPINYQ==$+mrXZvdXRMSJOMBhRwzInLXrFGPh1367Nu0YHkp6aKLdgn8M4HxBIEtWoz3Al9v+2sUvaItj+X6O+K63DNisMQ==",
     "rol": "funcionario"
   }
 ]

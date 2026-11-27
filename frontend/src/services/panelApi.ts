@@ -115,3 +115,19 @@ export function eliminarTramite(id: string): Promise<{ ok: boolean }> {
     method: "DELETE",
   });
 }
+
+/** Lista de funcionarios con sus roles. Solo admin (403 para el resto). */
+export function listarUsuarios(): Promise<{ usuarios: UsuarioPanel[] }> {
+  return pedir<{ usuarios: UsuarioPanel[] }>("/panel/usuarios");
+}
+
+/** Cambia el rol de un funcionario en la fuente activa (solo admin). */
+export function cambiarRol(
+  id: string,
+  rol: "admin" | "funcionario"
+): Promise<{ usuario: UsuarioPanel }> {
+  return pedir<{ usuario: UsuarioPanel }>(
+    `/panel/usuarios/${encodeURIComponent(id)}/rol`,
+    { method: "PUT", body: { rol } }
+  );
+}

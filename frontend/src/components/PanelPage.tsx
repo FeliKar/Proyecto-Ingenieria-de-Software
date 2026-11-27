@@ -1,16 +1,19 @@
 import { useCallback, useEffect, useState } from "react";
 import LoginPage from "./LoginPage";
 import PanelEditor from "./PanelEditor";
+import PanelUsuarios from "./PanelUsuarios";
 import {
   ErrorApi,
+  cambiarRol,
   cerrarSesion,
   eliminarTramite,
   guardarTramite,
   iniciarSesion,
   listarTramites,
+  listarUsuarios,
   quienSoy,
 } from "../services/panelApi";
-import type { EntradaPanel, FichaPanel, UsuarioPanel } from "../types/panel";
+import type { EntradaPanel, FichaPanel, Rol, UsuarioPanel } from "../types/panel";
 
 /**
  * Panel de funcionarios (US-05): alta, edición y baja de trámites.
@@ -48,6 +51,26 @@ export default function PanelPage({ onNavegar }: Props) {
   const [mensaje, setMensaje] = useState<string | null>(null);
   const [errorLogin, setErrorLogin] = useState<string | null>(null);
   const [entrando, setEntrando] = useState(false);
+
+  // Administración de usuarios (solo admin, ADR-05).
+  const [usuarios, setUsuarios] = useState<UsuarioPanel[]>([]);
+  const [mostrarUsuarios, setMostrarUsuarios] = useState(false);
+  const [actualizandoRol, setActualizandoRol] = useState<string | null>(null);
+  const [errorUsuarios, setErrorUsuarios] = useState<string | null>(null);
+
+  const esAdmin = usuario?.rol === "admin";
+
+  const cargarUsuarios = useCallback(async () => {
+    try {
+      const datos = await listarUsuarios();
+      setUsuarios(datos.usuarios);
+    } catch (err) {
+      if (esSesionVencida(err)) return;
+      setErrorUsuarios(
+        mensajeDe(err, "No se pudo cargar la lista de funcionarios.")
+      );
+    }
+  }, []);
 
   const cargarLista = useCallback(async () => {
     try {
@@ -87,6 +110,10 @@ export default function PanelPage({ onNavegar }: Props) {
     if (estado === "panel") void cargarLista();
   }, [estado, cargarLista]);
 
+  useEffect(() => {
+    if (estado === "panel" && esAdmin) void cargarUsuarios();
+  }, [estado, esAdmin, cargarUsuarios]);
+
   const manejarLogin = async (email: string, password: string) => {
     setEntrando(true);
     setErrorLogin(null);
@@ -105,7 +132,9 @@ export default function PanelPage({ onNavegar }: Props) {
     cerrarSesion();
     setUsuario(null);
     setTramites([]);
+    setUsuarios([]);
     setEditor(undefined);
+    setMostrarUsuarios(false);
     setEstado("sin-sesion");
   };
 
@@ -142,6 +171,24 @@ export default function PanelPage({ onNavegar }: Props) {
     }
   };
 
+  const manejarCambioRol = async (id: string, rol: Rol) => {
+    setActualizandoRol(id);
+    setErrorUsuarios(null);
+    setMensaje(null);
+    try {
+      await cambiarRol(id, rol);
+      setMensaje(
+        `Rol actualizado a ${rol}. Se aplica cuando el funcionario vuelva a iniciar sesión.`
+      );
+      await cargarUsuarios();
+    } catch (err) {
+      if (esSesionVencida(err)) return manejarSalir();
+      setErrorUsuarios(mensajeDe(err, "No se pudo cambiar el rol."));
+    } finally {
+      setActualizandoRol(null);
+    }
+  };
+
   if (estado === "cargando") {
     return (
       <main className="panel">
@@ -164,11 +211,23 @@ export default function PanelPage({ onNavegar }: Props) {
         <div>
           <h1>Panel de funcionarios</h1>
           <p className="subtitulo">
-            {usuario?.nombre} · datos desde{" "}
+            {usuario?.nombre} · {usuario?.rol} · datos desde{" "}
             {origen === "praxsuite" ? "Praxsuite" : "los JSON locales"}
           </p>
         </div>
         <div className="panel__acciones-cabecera">
+          {esAdmin && (
+            <button
+              type="button"
+              className="boton-secundario"
+              onClick={() => {
+                setMostrarUsuarios((v) => !v);
+                setErrorUsuarios(null);
+              }}
+            >
+              {mostrarUsuarios ? "Ocultar funcionarios" : "Funcionarios"}
+            </button>
+          )}
           <button type="button" className="boton-secundario" onClick={() => onNavegar("/")}>
             Ir al asistente
           </button>
@@ -187,6 +246,16 @@ export default function PanelPage({ onNavegar }: Props) {
         <p className="panel-login__error" role="alert">
           {error}
         </p>
+      )}
+
+      {esAdmin && mostrarUsuarios && (
+        <PanelUsuarios
+          usuarios={usuarios}
+          idSesion={usuario?.id ?? ""}
+          actualizando={actualizandoRol}
+          error={errorUsuarios}
+          onCambioRol={manejarCambioRol}
+        />
       )}
 
       {editor !== undefined ? (
@@ -252,13 +321,15 @@ export default function PanelPage({ onNavegar }: Props) {
                   >
                     Editar
                   </button>
-                  <button
-                    type="button"
-                    className="boton-peligro"
-                    onClick={() => void manejarEliminar(ficha)}
-                  >
-                    Eliminar
-                  </button>
+                  {esAdmin && (
+                    <button
+                      type="button"
+                      className="boton-peligro"
+                      onClick={() => void manejarEliminar(ficha)}
+                    >
+                      Eliminar
+                    </button>
+                  )}
                 </div>
               </li>
             ))}
