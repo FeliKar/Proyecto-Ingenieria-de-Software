@@ -105,6 +105,9 @@ export default function ConsultaForm({
           Consultar
         </button>
       </form>
+      <p className="consulta-form__ayuda">
+        También puedes escribir una sola palabra, por ejemplo: <strong>licencia</strong>.
+      </p>
     </div>
   );
 }

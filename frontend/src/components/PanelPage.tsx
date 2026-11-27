@@ -13,6 +13,10 @@ import {
   listarUsuarios,
   quienSoy,
 } from "../services/panelApi";
+import {
+  puedeAdministrarUsuarios,
+  puedeEliminarTramite,
+} from "../services/permisos";
 import type { EntradaPanel, FichaPanel, Rol, UsuarioPanel } from "../types/panel";
 
 /**
@@ -58,7 +62,8 @@ export default function PanelPage({ onNavegar }: Props) {
   const [actualizandoRol, setActualizandoRol] = useState<string | null>(null);
   const [errorUsuarios, setErrorUsuarios] = useState<string | null>(null);
 
-  const esAdmin = usuario?.rol === "admin";
+  const esAdmin = puedeAdministrarUsuarios(usuario?.rol);
+  const puedeBorrar = puedeEliminarTramite(usuario?.rol);
 
   const cargarUsuarios = useCallback(async () => {
     try {
@@ -321,7 +326,7 @@ export default function PanelPage({ onNavegar }: Props) {
                   >
                     Editar
                   </button>
-                  {esAdmin && (
+                  {puedeBorrar && (
                     <button
                       type="button"
                       className="boton-peligro"

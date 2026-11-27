@@ -153,6 +153,12 @@ input:focus-visible {
   flex-wrap: wrap;
 }
 
+.consulta-form__ayuda {
+  margin: -1rem 0 1.5rem;
+  color: #52606d;
+  font-size: 0.95rem;
+}
+
 .consulta-form input {
   flex: 1 1 300px;
   min-height: 64px;
