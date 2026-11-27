@@ -1,5 +1,5 @@
 @startuml
-title Componentes · Sprint 3 (MuniChat · panel de funcionarios)
+title Componentes · Sprint 3 (MuniChat · roles, palabras solas y call center)
 skinparam componentStyle uml2
 skinparam shadowing false
 skinparam defaultFontName Arial
@@ -8,51 +8,82 @@ package "Navegador" {
   package "frontend (React + TypeScript · Vite)" as FE {
     [App\n(rutas / y /panel)] as App
     [ChatApp\n(vecino, sin sesión)] as CA
+    [AbstentionMessage\n(web + tel:)] as AM
     [LoginPage] as LP
     [PanelPage] as PP
     [PanelEditor] as PE
+    [PanelUsuarios\n(selector de rol)] as PU
+    [permisos.ts\n(admin vs funcionario)] as PM
     [panelApi\n(Bearer JWT en localStorage)] as API
+    [tramitesApi\n(consulta anónima)] as TA
   }
 }
 
 package "backend (Node + Express + TypeScript)" as BE {
   [auth.routes\nPOST /login · GET /me] as AR
-  [panel.routes\nCRUD /api/panel/tramites] as PR
-  [requiereSesion\n(middleware)] as MW
+  [panel.routes\nCRUD /tramites + /usuarios] as PR
+  [requiereSesion\nrequiereRol (403)] as MW
   [jwt.ts · password.ts\nintentos.ts] as AUTH
   [panelService\nvalida y escribe] as PS
-  [usuariosRepository] as UR
+  [usuariosRepository\nlee/escribe rol] as UR
+  [tramiteMatcher\n(palabra sola → empate)] as TM
+  [abstention.ts\nweb + teléfono] as AB
   [fichasLocalStore\n(fichas.json · catalogo.json)] as FS
   [praxsuiteEscritura\n(PraxQL)] as PW
   [tramitesRepository\ncaché + invalidarCache] as TR
 }
 
 database "fichas.json + catalogo.json\n(respaldo local)" as JSON
+database "usuarios.json\n(respaldo local)" as UJ
 database "PraxSuite\nworkspace MuniChatIA" as DB
 
 App --> CA
 App --> LP
 App --> PP
+CA --> TA
+CA --> AM
 PP --> PE
+PP --> PU
+PP --> PM
 PP --> API
+PU --> API
 LP --> API
 API --> AR : POST /api/auth/login
 API --> PR : Bearer token
+TA --> PR : POST /api/tramites/consultar (sin token)
 PR --> MW
-MW --> AUTH : verificar JWT
+MW --> AUTH : verificar JWT + rol
 AR --> AUTH : verificar password
 AR --> UR
+PR --> PS
+PR --> UR : GET/PUT /usuarios
+PS --> TM
+TM --> AB
 PS --> FS
 PS --> PW
 PS --> TR : invalidarCache()
 TR --> JSON : lee
 TR --> DB : lee (si hay key)
 FS --> JSON : escribe
+UR --> UJ : escribe rol
+UR --> DB : UPDATE Usuarios SET Rol
 PW --> DB : INSERT/UPDATE/DELETE
 
 note bottom of MW
-  El vecino entra por ChatApp y
-  POST /api/tramites/consultar
-  sigue sin sesión (ADR-04).
+  ADR-04: el vecino entra por ChatApp y
+  consulta sin sesión.
+  ADR-05: admin borra y administra usuarios;
+  funcionario solo crea y edita (403 si no).
+end note
+
+note bottom of TM
+  Una sola palabra: una ficha → respuesta;
+  varias → opciones (empate);
+  palabra ajena → sin-match (US-09).
+end note
+
+note bottom of AB
+  Derivación por web y call center
+  (CALL_CENTER_TELEFONO).
 end note
 @enduml

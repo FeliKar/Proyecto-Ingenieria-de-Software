@@ -9,6 +9,7 @@ participant "PanelPage" as PP
 participant "auth.routes" as AR
 participant "usuariosRepository" as UR
 participant "panel.routes" as PR
+participant "requiereSesion / requiereRol" as MW
 participant "panelService" as PS
 database "fuente activa\n(JSON o Praxsuite)" as DB
 participant "tramitesRepository" as TR
@@ -39,4 +40,11 @@ Funcionario -> PP : consulta el asistente en otra pestaña
 PP -> TR : POST /api/tramites/consultar (sin token)
 TR -> DB : recarga tras invalidar la caché
 TR --> Funcionario : ficha actualizada
+
+note over Funcionario, DB
+  ADR-05: crear y editar es de cualquier funcionario.
+  Eliminar trámites y administrar usuarios exige
+  rol admin: requiereRol("admin") responde 403.
+  El alta/edición de roles está en secuencia_roles.puml.
+end note
 @enduml

@@ -78,6 +78,11 @@ Configuración en `backend/.env` (ver `backend/.env.example`):
 | `PRAXSUITE_TABLE_PASOS` | UUID de la tabla `Pasos`. |
 | `PRAXSUITE_CACHE_TTL_MS` | Vigencia de la caché en memoria (5 min por defecto). |
 | `PRAXSUITE_DISABLED` | `1` fuerza el uso de los JSON locales. |
+| `PRAXSUITE_TABLE_USUARIOS` | Tabla de funcionarios (por defecto, `Usuarios`). |
+| `JWT_SECRET` | Secreto de los JWT del panel; sin él es temporal. |
+| `PANEL_TOKEN_TTL_MINUTOS` | Vigencia de la sesión (480 min = 8 h por defecto). |
+| `PANEL_INTENTOS_MAXIMOS` / `PANEL_VENTANA_INTENTOS_MS` | Límite de logins fallidos (5 en 15 min por defecto). |
+| `CALL_CENTER_TELEFONO` | Teléfono de derivación (`+56 2 2486 8000` por defecto, fuente penalolen.cl). |
 
 Para comprobar qué fuente está activa:
 
@@ -96,19 +101,26 @@ sesión es solo para el funcionario que actualiza el catálogo.
 
 1. Abre <https://localhost:5173/panel> (en el chat hay un botón "Panel de
    funcionarios").
-2. Inicia sesión con el usuario de prueba:
+2. Inicia sesión con uno de los usuarios de prueba:
 
-   | Campo | Valor |
-   |---|---|
-   | Correo | `funcionario.demo@munichat.cl` |
-   | Contraseña | `Panel-Demo-2026` |
+   | Correo | Contraseña | Rol |
+   |---|---|---|
+   | `funcionario.demo@munichat.cl` | `Panel-Demo-2026` | `admin` |
+   | `editor.demo@munichat.cl` | `Panel-Editor-2026` | `funcionario` |
 
    Son los usuarios de `backend/src/data/usuarios.json`, que se usan cuando
    **no** hay API key de Praxsuite. Con Praxsuite configurado, los funcionarios
-   salen de la tabla `Usuarios` del workspace (`PRAXSUITE_TABLE_USUARIOS`).
+   salen de la tabla `Usuarios` del workspace (`PRAXSUITE_TABLE_USUARIOS`),
+   columna `Rol` incluida.
 
-3. Desde el panel puedes **crear, editar y eliminar** trámites. Todo lo que
-   guardes aparece en la consulta del vecino en el momento.
+3. Desde el panel puedes **crear y editar** trámites. **Eliminar** y usar la
+   sección **Funcionarios** (para asignar roles) son acciones solo de `admin`.
+   Todo lo que guardes aparece en la consulta del vecino en el momento.
+
+   Un admin no puede cambiar su propio rol (así el equipo nunca se queda sin
+   administradores). El rol nuevo se escribe en la DB, pero el JWT ya firmado
+   conserva el anterior: el cambio se aplica en el **próximo inicio de sesión**
+   (o al vencer la sesión, a las 8 h). Ver `docs/adr-05.md`.
 
 Reglas que el panel respeta (igual que la carga de datos):
 
@@ -127,7 +139,9 @@ API (todas menos `/api/auth/login` exigen `Authorization: Bearer <token>`):
 | GET | `/api/panel/tramites` | lista completa para editar |
 | POST | `/api/panel/tramites` | crear un trámite |
 | PUT | `/api/panel/tramites/:id` | editar un trámite |
-| DELETE | `/api/panel/tramites/:id` | eliminar un trámite |
+| DELETE | `/api/panel/tramites/:id` | eliminar un trámite (**solo admin**) |
+| GET | `/api/panel/usuarios` | listar funcionarios y roles (**solo admin**) |
+| PUT | `/api/panel/usuarios/:id/rol` | cambiar el rol a `admin` o `funcionario` (**solo admin**; no permite el propio) |
 
 Si `JWT_SECRET` no está definido, el servidor genera uno temporal y las sesiones
 se cierran al reiniciar: en producción va en `backend/.env` (ver
@@ -161,9 +175,20 @@ En la app escribe, por ejemplo:
 |---|---|
 | `Quiero sacar mi primera licencia clase B` | Muestra la ficha con requisitos, pasos, vigencia y "Ver información oficial" |
 | `licencia B` | Pregunta si es primera vez o renovación, con botones |
-| `¿Cómo solicito una licencia de perro?` | Se abstiene y muestra "Ir al canal oficial" |
-| `beca municipal` | Ofrece las dos becas municipales como botones para elegir |
+| `licencia` (una sola palabra) | Ofrece las opciones de licencia para elegir; si solo hay un trámite, lo muestra |
+| `guitarra` (una sola palabra) | Muestra la ficha del taller de guitarra |
+| `¿Cómo solicito una licencia de perro?` | Se abstiene y muestra "Ir al canal oficial" y "Llamar al +56 2 2486 8000" |
+| `beca municipal` | Ofrece las becas municipales como botones para elegir |
 | `Quiero inscribirme a un taller de guitarra` | Muestra el trámite del catálogo con "Ver información oficial" (sin requisitos inventados) |
+
+No hace falta escribir una frase: **una sola palabra** (`licencia`, `beca`,
+`guitarra`) también busca. Si hay un único trámite lo muestra; si hay varios,
+ofrece botones para elegir. Una palabra que no es del catálogo (`perro`,
+`conpostera`) sigue absteniéndose (US-09).
+
+Cuando no hay respuesta confiable, la derivación ofrece **web + teléfono**: el
+enlace a penalolen.cl y un botón `tel:` al call center municipal. El número se
+configura con `CALL_CENTER_TELEFONO` (`+56 2 2486 8000` por defecto).
 
 ### Consulta por voz (modo accesibilidad)
 
@@ -196,9 +221,9 @@ Todas las pruebas (backend + frontend):
 npm test
 ```
 
-- Backend: escenarios Gherkin de US-01, US-06 y US-09 con Cucumber (`backend/features/`), incluidos escenarios de consultas habladas con muletillas, más `catalogo.feature` (catálogo de solo enlace, empate con opciones y tolerancia al 80%), `auth.feature` (sesión del funcionario) y `panel.feature` (alta, edición y baja de trámites).
-- Backend unitarias: `npm --prefix backend run test:unit` (validación, matching, contraseñas, JWT y panel sobre archivos temporales).
-- Frontend: tests del componente de resultado, de las opciones de desempate, de los textos hablados, del formulario con micrófono, del botón de modo accesibilidad, del login y del editor del panel (`frontend/tests/`).
+- Backend: escenarios Gherkin de US-01, US-06 y US-09 con Cucumber (`backend/features/`), incluidos escenarios de consultas habladas con muletillas, más `catalogo.feature` (catálogo de solo enlace, empate con opciones y tolerancia al 80%), `palabras-solas.feature`, `call-center.feature`, `auth.feature` (sesión del funcionario), `panel.feature` (alta, edición y baja de trámites) y `roles.feature` (permisos y asignación de roles).
+- Backend unitarias: `npm --prefix backend run test:unit` (validación, matching —incluidas las palabras solas—, contraseñas, JWT, panel y roles sobre archivos temporales).
+- Frontend: tests del componente de resultado, de las opciones de desempate, de la derivación con teléfono, de los textos hablados, del formulario con micrófono, del botón de modo accesibilidad, del login, del editor del panel, de la lista de funcionarios, de los permisos por rol y del API anónima (`frontend/tests/`).
 
 
 Build del frontend:
@@ -221,13 +246,17 @@ npm run build --prefix frontend
 ```
 backend/    API Express + TypeScript (puerto 3001), fichas, matching y pruebas Gherkin
 frontend/   App React + TypeScript con Vite (puerto 5173)
-docs/       UML (docs/uml), ADR-01 y documentos del sprint
+docs/       UML (docs/uml), ADR-01..05 y documentos del sprint
 ```
 
 ## Documentación
 
-- `docs/uml/` — diagramas UML del Sprint 1 (casos de uso, clases, secuencia y componentes)
+- `docs/uml/` — diagramas UML del Sprint 1 (casos de uso, clases, secuencia y componentes) y de los sprints 2 y 3 (`componentes_sprint3.puml`, `secuencia_panel.puml`, `secuencia_roles.puml`)
 - `docs/adr-01.md` — decisión de arquitectura: fichas JSON sin LLM, monolito cliente-servidor
+- `docs/adr-02.md` — seguridad y datos personales
+- `docs/adr-03.md` — manejo de la incertidumbre y derivación
+- `docs/adr-04.md` — autenticación: solo los funcionarios inician sesión
+- `docs/adr-05.md` — autorización: roles `admin` y `funcionario`
 - `docs/revision-lenguaje-simple.md` — checklist de lenguaje simple de las fichas
 - `team-charter.md` — acuerdos del equipo
 - `riesgos.md` — riesgos del proyecto

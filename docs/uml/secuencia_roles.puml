@@ -1,0 +1,41 @@
+@startuml
+title Secuencia · admin asigna un rol y el cambio rige en el próximo login (ADR-05)
+skinparam shadowing false
+skinparam defaultFontName Arial
+autonumber
+
+actor "Admin" as A
+participant "PanelUsuarios\n(React)" as PU
+participant "panelApi" as API
+participant "panel.routes" as PR
+participant "requiereRol(\"admin\")" as MW
+participant "usuariosRepository" as UR
+database "fuente activa\n(Usuarios o usuarios.json)" as DB
+
+A -> PU : elige el rol "admin" para Editor Demo
+PU -> API : cambiarRol(id, "admin")
+API -> PR : PUT /api/panel/usuarios/:id/rol\n(Bearer JWT)
+
+alt Sin token
+  PR --> API : 401 (requiereSesion)
+else Token de funcionario
+  MW --> API : 403 (requiereRol)
+else Token de admin
+  MW -> MW : ¿id == sub? → 400\n(auto-degradación prohibida)
+  MW -> MW : ¿rol ∈ {admin, funcionario}?\n(si no, 400)
+  PR -> UR : actualizarRol(id, rol)
+  UR -> DB : UPDATE Usuarios SET Rol\no escribir usuarios.json
+  DB --> UR : rol guardado (hash intacto)
+  UR --> PR : usuario público (sin hash)
+  PR --> API : 200 { usuario }
+  API --> PU : mensaje "se aplica al volver a entrar"
+end
+
+note over A, DB
+  El JWT ya firmado conserva el rol anterior
+  hasta que venza (8 h): el cambio rige en el
+  próximo login. El frontend oculta Eliminar y
+  Funcionarios según el rol, pero el backend
+  vuelve a verificar siempre con requiereRol.
+end note
+@enduml

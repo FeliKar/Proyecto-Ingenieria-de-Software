@@ -18,10 +18,20 @@ alt Consulta fuera de cobertura (CA14.3)
   API -> R : POST /api/tramites/consultar {pregunta}
   R -> M : matchTramiteDetalle(pregunta, fichasDisponibles)
   M --> R : {ficha: null, motivo: "sin-match"}
-  R -> ABS : ABSTENCION_MENSAJE, CANAL_DERIVACION
+  R -> ABS : ABSTENCION_MENSAJE, CANAL_DERIVACION\n(web + teléfono)
   R --> API : 200 {encontrado: false, abstencion: true,\nmensaje, canal_derivacion}
   API --> App : abstención
-  App --> Vecino : AbstentionMessage + "Ir al canal oficial"\n(sin ficha ni enlace inventado)
+  App --> Vecino : AbstentionMessage + "Ir al canal oficial"\n+ "Llamar al +56 2 2486 8000"\n(sin ficha ni enlace inventado)
+
+else Una sola palabra con varias coincidencias (empate)
+  Vecino -> App : escribe "licencia"
+  App -> API : consultarTramite("licencia")
+  API -> R : POST /api/tramites/consultar {pregunta}
+  R -> M : matchTramiteDetalle("licencia", fichasDisponibles)
+  M --> R : {ficha: null, motivo: "empate", opciones}
+  R -> ABS : MENSAJE_EMPATE, CANAL_DERIVACION
+  R --> API : 200 {encontrado: false, motivo: "empate",\nopciones, canal_derivacion}
+  App --> Vecino : botones para elegir + web + teléfono
 
 else Pregunta vacía
   note over Vecino, App : En la interfaz el botón Consultar queda deshabilitado sin texto.\nLa API igual se protege si recibe una pregunta vacía.
