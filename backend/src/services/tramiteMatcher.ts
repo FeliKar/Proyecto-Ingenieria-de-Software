@@ -246,6 +246,12 @@ const UMBRAL_RECOMENDACION = 0.8;
 // catálogo y se abstiene (US-09: no inventar).
 const UMBRAL_PALABRA_DESCONOCIDA = 0.5;
 
+// En consultas de una sola palabra, así de parecida debe quedar la palabra
+// original después de la autocorrección: evita que "basura" se corrija a
+// "basica" y el asistente ofrezca pensiones (US-09: no responder con algo
+// que no es lo que preguntaron).
+const UMBRAL_PALABRA_SEMEJANTE = 0.6;
+
 // Tamaño máximo de la lista de opciones al haber empate.
 const TOPE_OPCIONES = 5;
 
@@ -447,6 +453,61 @@ export function matchTramiteDetalle(
         };
       }
       return { ficha: recomendaciones[0].ficha, motivo: "ok" };
+    }
+  }
+
+  // Consulta de una sola palabra (p. ej. "licencia" o "permiso"): el filtro de
+  // overlap >= 2 la descartaría siempre, así que aquí basta con una sola
+  // palabra en común. Si hay un único trámite se responde; si hay varios se
+  // ofrecen como opciones para que el vecino elija: nunca se adivina (US-09).
+  if (tokensPregunta.length === 1 && preguntaStems.size === 1) {
+    const unicoStem = preguntaStems.values().next().value as string;
+    const originales = tokensDe(pregunta);
+
+    // La autocorrección solo es válida si la palabra original se le parece:
+    // "basura" no puede corregirse a "basica" y responder pensiones.
+    const par = tokensPregunta
+      .map((corregida, i) => [originales[i], corregida] as const)
+      .find(([, corregida]) => stem(corregida) === unicoStem);
+    if (
+      par &&
+      par[0] !== undefined &&
+      par[0] !== par[1] &&
+      dice(normalize(par[0]), normalize(par[1])) < UMBRAL_PALABRA_SEMEJANTE
+    ) {
+      return { ficha: null, motivo: "sin-match" };
+    }
+
+    const porPalabra: Puntaje[] = [];
+    for (const ficha of fichas) {
+      let mejor = 0;
+      let overlap = 0;
+      // El nombre del trámite cuenta igual que sus alias.
+      for (const nombre of [ficha.tramite, ...ficha.alias]) {
+        const s = scoreAlias(preguntaStems, nombre);
+        if (s > mejor) mejor = s;
+        const tokens = new Set(tokensDe(nombre).map(stem));
+        const o = [...tokens].filter((x) => preguntaStems.has(x)).length;
+        if (o > overlap) overlap = o;
+      }
+      if (overlap >= 1 && mejor > 0) {
+        porPalabra.push({ ficha, score: mejor, overlap });
+      }
+    }
+    // El puntaje manda: los alias más cortos (más específicos) quedan arriba.
+    porPalabra.sort((a, b) => b.score - a.score);
+
+    if (porPalabra.length === 1) {
+      return { ficha: porPalabra[0].ficha, motivo: "ok" };
+    }
+    if (porPalabra.length > 1) {
+      return {
+        ficha: null,
+        motivo: "empate",
+        opciones: porPalabra
+          .slice(0, TOPE_OPCIONES)
+          .map((p) => ({ id: p.ficha.id, tramite: p.ficha.tramite })),
+      };
     }
   }
 

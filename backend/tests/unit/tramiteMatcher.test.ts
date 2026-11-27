@@ -132,3 +132,54 @@ describe("matchTramite", () => {
     assert.equal(matchTramite("sacar licencia clase B", FICHAS), null);
   });
 });
+
+describe("consultas de una sola palabra", () => {
+  it("con un único trámite devuelve la ficha", () => {
+    const r = matchTramiteDetalle("guitarra", [
+      ficha("taller-guitarra", ["taller de guitarra"]),
+      ficha("permiso-circulacion", ["permiso de circulacion"]),
+    ]);
+    assert.equal(r.motivo, "ok");
+    assert.equal(r.ficha?.id, "taller-guitarra");
+  });
+
+  it("con varios trámites ofrece opciones en vez de adivinar", () => {
+    const r = matchTramiteDetalle("certificado", [
+      ficha("cert-numero", ["certificado de numero"]),
+      ficha("cert-zona", ["certificado de zona"]),
+      ficha("cert-omil", ["certificado omil"]),
+      ficha("permiso-circulacion", ["permiso de circulacion"]),
+    ]);
+    assert.equal(r.motivo, "empate");
+    assert.equal(r.ficha, null);
+    assert.equal(r.opciones?.length, 3);
+    assert.ok(
+      r.opciones?.some((o) => o.id === "cert-numero"),
+      "Deben estar los tres certificados"
+    );
+  });
+
+  it("con los datos reales ofrece opciones de licencia", () => {
+    const r = matchTramiteDetalle("licencia", FICHAS);
+    assert.equal(r.motivo, "empate");
+    assert.equal(r.ficha, null);
+    assert.ok((r.opciones?.length ?? 0) > 1);
+    assert.ok(r.opciones?.some((o) => o.id === "licencia-b-primera"));
+  });
+
+  it("una palabra ajena sigue absteniéndose", () => {
+    assert.equal(matchTramiteDetalle("conpostera", FICHAS).motivo, "sin-match");
+    assert.equal(matchTramiteDetalle("perro", FICHAS).motivo, "sin-match");
+  });
+
+  it("no acepta una autocorrección que cambia el tema (basura → basica)", () => {
+    const r = matchTramiteDetalle("basura", FICHAS);
+    assert.equal(r.motivo, "sin-match");
+  });
+
+  it("acepta la corrección fonética si la palabra original se le parece", () => {
+    const r = matchTramiteDetalle("licensia", FICHAS);
+    assert.equal(r.motivo, "empate");
+    assert.ok((r.opciones?.length ?? 0) > 1);
+  });
+});
